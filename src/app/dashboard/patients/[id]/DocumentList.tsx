@@ -29,7 +29,7 @@ export default function DocumentList({
   return (
     <div className="flex-1 overflow-y-auto px-4 py-4">
       <div className="flex items-center justify-between mb-3 px-1">
-        <p className="font-mono text-[9px] tracking-widest text-muted-foreground uppercase">Documents</p>
+        <p className="font-mono text-[9px] tracking-widest text-muted-foreground uppercase">Clinical Records Timeline</p>
         {documents.length > 0 && !isGuest && !isDemo && (
           <DocumentUploader
             patientId={patientId}
@@ -45,7 +45,7 @@ export default function DocumentList({
 
       {documents.length === 0 ? (
         <div className="border border-dashed border-border rounded-lg p-6 text-center bg-surface/50">
-          <p className="text-[12px] font-medium text-foreground">No documents yet</p>
+          <p className="text-[12px] font-medium text-foreground">No records in timeline yet</p>
           {!isGuest && !isDemo ? (
             <DocumentUploader
               patientId={patientId}
@@ -57,7 +57,7 @@ export default function DocumentList({
               onDocumentAdded={onDocumentAdded}
             />
           ) : (
-            <p className="font-mono text-[9px] text-muted-foreground mt-1">Sign in to upload medical prescriptions and notes.</p>
+            <p className="font-mono text-[9px] text-muted-foreground mt-1">Sign in to index medical records into temporal memory.</p>
           )}
         </div>
       ) : (

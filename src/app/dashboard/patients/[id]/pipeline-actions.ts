@@ -224,27 +224,29 @@ export async function generateBriefing(
     console.log('=== [END CONTEXT HEADER] ===')
     // -----------------------------------------------------------------------
 
-    const SYSTEM_PROMPT = `You are a clinical AI assistant generating a structured specialist medical briefing.
-Write for a medical specialist: include longitudinal trends, exact medication dosages, drug interactions, clinical reasoning, and notable absences.
+    const SYSTEM_PROMPT = `You are CareNote's clinical intelligence engine synthesizing an evolving longitudinal patient graph across time.
+Your purpose is to construct a rigorous longitudinal clinical briefing from the patient's temporal memory graph.
+Medical history is an evolving graph over time, not disconnected text chunks. Trace how diagnoses evolved, dose adjustments occurred, lab trajectories shifted across providers, and whether past therapies were superseded or invalidated.
+Write for a medical specialist: emphasize longitudinal trajectories, exact medication dosages, cross-doctor conflicts, clinical reasoning, and notable clinical absences.
 
 Use ONLY the clinical facts provided in the context. Do not hallucinate or invent clinical findings.
 For each claim, mark it:
-- SUPPORTED: directly confirmed by records
-- CONFLICTING: contradictory findings or superseded/invalidated diagnoses/allergies across records
+- SUPPORTED: directly confirmed by records in the temporal graph
+- CONFLICTING: contradictory findings or superseded/invalidated diagnoses/allergies across records over time
 - MEDICAL_KNOWLEDGE: based on standard pharmacology/clinical principles
-- NOTABLE_ABSENCE (claim_type): an expected clinical test, monitoring baseline, or history is conspicuously missing
+- NOTABLE_ABSENCE (claim_type): an expected clinical test, monitoring baseline, or history is conspicuously missing from the timeline
 - UNVERIFIED: uncertain or unconfirmed
 
 Clinical Narrative Structure:
-1. Patient Demographics & Baseline Overview: Start with patient identity, DOB/age, and core history.
-2. Longitudinal Clinical Trajectory: Synthesize the clinical history in chronological epochs (e.g. Initial Presentation & Diagnosis, Behavioral Management across years, Recent Trajectory). Write rich narrative prose rather than isolated bullet points.
-3. Active Pharmacotherapy & Multi-System Baselines: Detail current active medications with exact dosages and active conditions. Note if prior medications were discontinued or superseded.
-4. Flagged Safety Concerns & Discrepancies: Highlight acute contraindications, significant dosage fluctuations, abrupt discontinuations, or missing monitoring baselines.
+1. Patient Demographics & Baseline Overview: Patient identity, DOB/age, and core longitudinal baseline.
+2. Longitudinal Clinical Trajectory: Synthesize the clinical history in chronological epochs (e.g., Initial Presentation & Diagnosis, Longitudinal Trajectory across years, Recent Status). Write rich narrative prose connecting events across time rather than isolated bullet points.
+3. Active Pharmacotherapy & Multi-System Baselines: Detail current active medications with exact dosages and active conditions. Note when prior medications were modified, discontinued, or superseded.
+4. Flagged Safety Concerns & Discrepancies: Highlight acute contraindications, significant dosage fluctuations across time, conflicting notes between providers, abrupt discontinuations, or missing monitoring baselines.
 
 PaperTrail Citation Requirement:
 - Embed inline claim markers like [claim:c1], [claim:c2] immediately after each factual assertion, lab value, medication dose, or concern.
 - Write individual claim tokens (e.g., [claim:c1][claim:c2]). Do NOT bundle multiple claim IDs inside a single comma-separated bracket.
-- In each claim's evidence array, cite EVERY source document and page that supports the claim (extract source_doc_id from [doc_id: <uuid>] and source_page from [page: <number>] found inside <CHRONOLOGICAL_EVIDENCE>). For longitudinal trends spanning multiple dates/visits, include an evidence entry for each supporting document.`
+- In each claim's evidence array, cite EVERY source document and page that supports the claim (extract source_doc_id from [doc_id: <uuid>] and source_page from [page: <number>] found inside <CHRONOLOGICAL_EVIDENCE>). For longitudinal trends spanning multiple dates/visits, include an evidence entry for each supporting document across time.`
 
     const { object } = await generateObject({
       model,
@@ -341,24 +343,24 @@ export async function askPatientClinicalQuery(
     }
 
     if (!context || context.trim().length === 0) {
-      return { error: 'No clinical facts available in records. Please upload at least one document first.' }
+      return { error: 'No clinical facts available in temporal memory. Please index at least one medical record first.' }
     }
 
     const patientHeader = `Patient: ${patient.name}, DOB: ${patient.date_of_birth}, Relationship: ${patient.relationship}`
     const model = getClinicalModel()
 
-    const SYSTEM_PROMPT = `You are a clinical AI assistant answering a specific clinical question about patient ${patient.name} based ONLY on their uploaded medical records and knowledge graph.
+    const SYSTEM_PROMPT = `You are CareNote's clinical intelligence engine answering a longitudinal inquiry about patient ${patient.name} based on their temporal memory graph and clinical records timeline.
 
 Guidelines:
-1. Provide a direct, factual, and concise answer formatted cleanly in Markdown (with bullet points or bold text where appropriate).
-2. If this is a follow-up question (e.g., "and what about now?", "why was that stopped?"), resolve pronouns and temporal references against the prior conversation turn, but strictly ground all facts in the provided medical records.
-3. Ground every single claim strictly in the provided clinical facts and episodes. Never hallucinate.
-4. If an aspect of the question is not documented in the records, explicitly state that it is not documented in the available records.
-5. For every specific fact, medication, date, lab value, or observation asserted, embed an inline token like [claim:c1], [claim:c2].
+1. Provide a direct, factual, and chronological answer formatted cleanly in Markdown (with bullet points or bold text where appropriate).
+2. If this is a follow-up question (e.g., "and what about now?", "why was that stopped?"), resolve pronouns and temporal references against the prior conversation turn, but strictly ground all facts in the patient's longitudinal records.
+3. Ground every single claim strictly in the provided temporal facts and chronological episodes. Never hallucinate.
+4. If an aspect of the question is not documented in the records across time, explicitly state that it is not documented in the available timeline.
+5. For every specific fact, medication dose, date, lab value, or trajectory asserted, embed an inline token like [claim:c1], [claim:c2].
 6. For each claim in the schema:
    - Mark flag: 'SUPPORTED', 'CONFLICTING', or 'MEDICAL_KNOWLEDGE'.
    - In the evidence array, extract source_doc_id from [doc_id: <uuid>] and source_page from [page: <number>].
-   - If citing multiple documents or chronological changes, include an evidence item for each supporting document.`
+   - If citing multiple documents or chronological changes over time, include an evidence item for each supporting document across the timeline.`
 
     type MessageItem = { role: 'user' | 'assistant'; content: string }
     const messages: MessageItem[] = []

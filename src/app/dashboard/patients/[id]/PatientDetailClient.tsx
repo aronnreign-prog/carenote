@@ -597,10 +597,10 @@ export default function PatientDetailClient({ patient, initialDocuments, initial
               className="w-full min-h-[40px] bg-white text-black font-mono text-[11px] font-semibold py-2.5 px-3 rounded-lg hover:bg-white/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 cursor-pointer touch-manipulation focus-visible:ring-2 focus-visible:ring-white/60 outline-none shadow-sm"
             >
               {generating
-                ? 'Generating briefing…'
+                ? 'Traversing patient graph...'
                 : documents.some(d => d.status === 'uploaded' || d.status === 'extracting')
-                ? 'Extracting records…'
-                : 'Generate Specialist Briefing'}
+                ? 'Indexing into temporal memory...'
+                : 'Synthesize Longitudinal Briefing'}
             </button>
           </div>
         )}
@@ -644,10 +644,10 @@ export default function PatientDetailClient({ patient, initialDocuments, initial
                 className="w-full min-h-[40px] bg-white text-black font-mono text-[11px] font-semibold py-2.5 px-3 rounded-lg hover:bg-white/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 cursor-pointer touch-manipulation focus-visible:ring-2 focus-visible:ring-white/60 outline-none shadow-sm"
               >
                 {generating
-                  ? 'Generating briefing…'
+                  ? 'Traversing patient graph...'
                   : documents.some(d => d.status === 'uploaded' || d.status === 'extracting')
-                  ? 'Extracting records…'
-                  : 'Generate Specialist Briefing'}
+                  ? 'Indexing into temporal memory...'
+                  : 'Synthesize Longitudinal Briefing'}
               </button>
             </div>
           )}
@@ -666,7 +666,7 @@ export default function PatientDetailClient({ patient, initialDocuments, initial
                     : 'text-muted-foreground hover:text-foreground hover:bg-surface-raised border border-border'
                 }`}
               >
-                <span>📋</span> Specialist Briefing
+                <span>📋</span> Longitudinal Briefing
               </button>
               <button
                 onClick={() => setActiveView('query')}
@@ -676,7 +676,7 @@ export default function PatientDetailClient({ patient, initialDocuments, initial
                     : 'text-muted-foreground hover:text-foreground hover:bg-surface-raised border border-border'
                 }`}
               >
-                <span>🔍</span> <span className="hidden sm:inline">On-Demand Record</span> Query
+                <span>🔍</span> <span className="hidden sm:inline">Temporal Memory</span> Query
                 {queryHistory.length > 0 && (
                   <span className="ml-1 text-[9px] bg-background/20 px-1.5 py-0.2 rounded-full">
                     {queryHistory.length}
@@ -702,11 +702,11 @@ export default function PatientDetailClient({ patient, initialDocuments, initial
             <div className="px-4 sm:px-8 py-5 sm:py-6 max-w-3xl flex-1">
               <div className="mb-6">
                 <div className="flex items-center gap-2">
-                  <h2 className="text-[15px] sm:text-[16px] font-semibold text-foreground">On-Demand Clinical Query</h2>
+                  <h2 className="text-[15px] sm:text-[16px] font-semibold text-foreground">Temporal Memory Query</h2>
                   <span className="font-mono text-[9px] border border-accent/40 text-accent bg-accent-dim px-2 py-0.5 rounded">ZEP GRAPH MEMORY</span>
                 </div>
                 <p className="text-[12px] text-muted-foreground mt-1">
-                  Ask any specific clinical question across {patient.name}&apos;s documents. Facts and numbers are grounded in Zep graph memory with interactive PaperTrail citations.
+                  Query years of accumulated medical records for {patient.name}. Facts, dose adjustments, and lab trajectories are resolved across time with interactive PaperTrail citations.
                 </p>
               </div>
 
@@ -724,7 +724,7 @@ export default function PatientDetailClient({ patient, initialDocuments, initial
                       type="text"
                       value={queryInput}
                       onChange={(e) => setQueryInput(e.target.value)}
-                      placeholder={`Ask a question (e.g., "What was the Olanzapine dosage change in 2025?", "List all kidney lab values")`}
+                      placeholder={`Ask a longitudinal question (e.g., "How has kidney function changed over the past 12 months?", "Track all dose adjustments for Olanzapine")`}
                       disabled={queryRunning}
                       className="w-full bg-background border border-border rounded-md px-3.5 py-2.5 text-[16px] sm:text-[13px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-accent disabled:opacity-50"
                     />
@@ -734,9 +734,9 @@ export default function PatientDetailClient({ patient, initialDocuments, initial
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <span className="font-mono text-[9px] text-muted-foreground uppercase mr-1">Quick Prompts:</span>
                       {[
-                        'Medication changes & timeline',
-                        'Lab trends & biomarkers',
-                        'Any seizure or allergy history?',
+                        'Medication adjustments across timeline',
+                        'Longitudinal lab trends & biomarkers',
+                        'Cross-doctor prescription conflicts',
                         'Discontinued treatments & rationale',
                       ].map((promptText, i) => (
                         <button
@@ -762,10 +762,10 @@ export default function PatientDetailClient({ patient, initialDocuments, initial
                       {queryRunning ? (
                         <>
                           <div className="w-1.5 h-1.5 rounded-full bg-background animate-pulse" />
-                          Searching records...
+                          Traversing temporal memory...
                         </>
                       ) : (
-                        'Ask Records ↗'
+                        'Query Graph Memory ↗'
                       )}
                     </button>
                   </div>
@@ -917,7 +917,7 @@ export default function PatientDetailClient({ patient, initialDocuments, initial
                         <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse shrink-0" />
                       )}
                       <span>
-                        {b.audience?.toUpperCase() === 'SPECIALIST' ? 'SPECIALIST' : (b.audience?.toUpperCase() || 'BRIEFING')} · {new Date(b.created_at).toLocaleDateString()}
+                        {b.audience?.toUpperCase() === 'SPECIALIST' ? 'LONGITUDINAL' : (b.audience?.toUpperCase() || 'BRIEFING')} · {new Date(b.created_at).toLocaleDateString()}
                       </span>
                     </div>
                   ))}
@@ -929,7 +929,7 @@ export default function PatientDetailClient({ patient, initialDocuments, initial
                   <div className="flex items-start justify-between mb-5 gap-2">
                     <div>
                       <h2 className="text-[15px] sm:text-[16px] font-semibold text-foreground">
-                        Specialist Briefing
+                        Longitudinal Clinical Briefing
                       </h2>
                       <p className="font-mono text-[9px] sm:text-[10px] text-muted-foreground mt-0.5">Generated {new Date(activeBriefing.created_at).toLocaleString()}</p>
                     </div>
@@ -966,8 +966,8 @@ export default function PatientDetailClient({ patient, initialDocuments, initial
                         <div className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" style={{animationDelay: '0.2s'}} />
                         <div className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" style={{animationDelay: '0.4s'}} />
                       </div>
-                      <p className="font-mono text-[11px] text-accent">Analysing documents and building briefing...</p>
-                      <p className="text-[11px] text-muted-foreground mt-1">This takes 15–30 seconds. Results appear automatically.</p>
+                      <p className="font-mono text-[11px] text-accent">Traversing temporal graph and synthesizing longitudinal briefing...</p>
+                      <p className="text-[11px] text-muted-foreground mt-1">This takes 15-30 seconds. Results appear automatically.</p>
                     </div>
                   )}
 
@@ -1021,15 +1021,15 @@ export default function PatientDetailClient({ patient, initialDocuments, initial
                   {isDemo && (
                     <div className="border-t border-border mt-8 pt-6">
                       <p className="font-mono text-[9px] tracking-widest text-muted-foreground uppercase mb-2">This is a demo briefing</p>
-                      <p className="text-[12px] text-muted-foreground leading-relaxed">Real briefings are generated from your uploaded documents. Every claim above would link to an exact source quote, page number, and date. <Link href="/signup" className="text-accent hover:underline">Create an account</Link> to get started.</p>
+                      <p className="text-[12px] text-muted-foreground leading-relaxed">Real briefings synthesize an evolving patient graph across time. Every claim links to an exact source quote, page number, and date. <Link href="/login" className="text-accent hover:underline">Sign in</Link> to get started.</p>
                     </div>
                   )}
                 </div>
               ) : (
                 <div className="flex-1 flex items-center justify-center px-8 py-16">
                   <div className="text-center max-w-sm">
-                    <p className="font-mono text-[9px] tracking-widest text-muted-foreground uppercase mb-3">No briefing yet</p>
-                    <p className="text-[13px] text-muted-foreground leading-relaxed mb-4">Upload at least one document, then generate a briefing.</p>
+                    <p className="font-mono text-[9px] tracking-widest text-muted-foreground uppercase mb-3">Longitudinal Briefing Not Yet Synthesized</p>
+                    <p className="text-[13px] text-muted-foreground leading-relaxed mb-4">Index clinical records into the timeline to build the patient&apos;s evolving temporal graph, then synthesize a longitudinal briefing.</p>
                     {documents.length === 0 && (
                       <button
                         type="button"
@@ -1041,7 +1041,7 @@ export default function PatientDetailClient({ patient, initialDocuments, initial
                     )}
                     {!isGuest && documents.length > 0 && (
                       <button onClick={handleGenerateBriefing} disabled={generating} className="bg-accent text-background font-mono text-[11px] font-semibold px-4 py-2 rounded hover:opacity-90 transition-opacity disabled:opacity-50">
-                        {generating ? 'Starting...' : 'Generate Specialist Briefing'}
+                        {generating ? 'Traversing patient graph...' : 'Synthesize Longitudinal Briefing'}
                       </button>
                     )}
                   </div>

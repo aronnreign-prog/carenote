@@ -190,7 +190,9 @@ export default async function DashboardPage() {
                             <rect x="1" y="1.5" width="9" height="8" rx="1" stroke="currentColor" strokeWidth="1.1"/>
                             <path d="M3.5 4.5h4M3.5 6.5h2.5" stroke="currentColor" strokeWidth="1" strokeLinecap="round"/>
                           </svg>
-                          <span className="font-mono text-[10px] text-white/60">{p.docCount ?? '0'} docs</span>
+                          <span className="font-mono text-[10px] text-white/60">
+                            {p.docCount ?? 0} {p.docCount === 1 ? 'record indexed' : 'records indexed'}
+                          </span>
                         </div>
                         {(p.flagCount ?? 0) > 0 ? (
                           <div className="flex items-center gap-1.5 px-2 py-0.5 rounded bg-red-500/10 border border-red-500/20">
@@ -203,19 +205,23 @@ export default async function DashboardPage() {
                             <span className="font-mono text-[10px] text-white/40">0 flags</span>
                           </div>
                         )}
-                        {p.briefingStatus && (
-                          <span className={`ml-auto font-mono text-[9px] px-2 py-0.5 rounded border ${
-                            p.briefingStatus === 'complete'
-                              ? 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10 font-medium'
-                              : 'text-white/40 border-white/10 bg-white/[0.02]'
-                          }`}>
-                            {p.briefingStatus === 'complete' ? 'BRIEFING READY' : 'NO BRIEFING'}
-                          </span>
-                        )}
+                        <span className={`ml-auto font-mono text-[9px] px-2 py-0.5 rounded border ${
+                          p.briefingStatus === 'complete'
+                            ? 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10 font-medium'
+                            : (p.docCount && p.docCount > 0)
+                            ? 'text-accent border-accent/30 bg-accent-dim font-medium'
+                            : 'text-white/40 border-white/10 bg-white/[0.02]'
+                        }`}>
+                          {p.briefingStatus === 'complete'
+                            ? 'LONGITUDINAL BRIEFING READY'
+                            : (p.docCount && p.docCount > 0)
+                            ? 'GRAPH CONNECTED'
+                            : 'AWAITING RECORDS'}
+                        </span>
                       </div>
                     </div>
                     <div className="border-t border-[#1F2937] px-5 py-2.5 flex items-center justify-between bg-[#0A0E14]/30">
-                      <span className="font-mono text-[10px] text-white/50 group-hover:text-white transition-colors">Open dossier</span>
+                      <span className="font-mono text-[10px] text-white/50 group-hover:text-white transition-colors">Open Clinical Timeline &amp; Graph</span>
                       <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="text-white/40 group-hover:text-white group-hover:translate-x-0.5 transition-all">
                         <path d="M2.5 6h7M6 2.5l3.5 3.5L6 9.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
                       </svg>
@@ -231,8 +237,8 @@ export default async function DashboardPage() {
 
             {patients.length === 0 && (
               <div className="col-span-full border border-dashed border-[#1F2937] rounded-xl p-8 sm:p-12 text-center bg-[#0D1117]/30">
-                <p className="font-mono text-[9px] tracking-widest text-white/40 uppercase mb-2">No patients yet</p>
-                <p className="text-[12px] text-white/50">Add your first patient profile to begin indexing clinical records.</p>
+                <p className="font-mono text-[9px] tracking-widest text-white/40 uppercase mb-2">No patient graphs initialized</p>
+                <p className="text-[12px] text-white/50">Initialize a patient graph to connect prescriptions, lab trends, and doctor notes across time.</p>
               </div>
             )}
           </div>

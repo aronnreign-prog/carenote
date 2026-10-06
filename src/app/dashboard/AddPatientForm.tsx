@@ -44,7 +44,7 @@ export default function AddPatientForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-2.5">
-      <p className="font-mono text-[9px] tracking-widest text-white/40 uppercase mb-3">Add patient profile</p>
+      <p className="font-mono text-[9px] tracking-widest text-white/40 uppercase mb-3">Initialize Patient Graph</p>
       {error && (
         <div aria-live="polite" className="font-mono text-[10px] text-red-400 border border-red-500/30 bg-red-500/10 px-2.5 py-1.5 rounded-lg">
           {error}
@@ -62,7 +62,7 @@ export default function AddPatientForm() {
         name="relationship"
         value={relationship}
         onChange={(e) => setRelationship(e.target.value)}
-        placeholder="Relationship (e.g. Mother, Father)"
+        placeholder="Relationship (e.g. Mother, Father, Self)"
         required
         className="w-full bg-[#0A0E14] border border-[#1F2937] rounded-lg px-3 py-2 text-[16px] sm:text-[12px] text-white placeholder:text-white/30 focus:outline-none focus:border-white/40 focus:ring-1 focus:ring-white/30 transition-colors"
       />
@@ -79,7 +79,7 @@ export default function AddPatientForm() {
         disabled={loading}
         className="w-full min-h-[38px] bg-white text-black font-medium text-[12px] py-2 rounded-lg hover:bg-white/90 transition-all disabled:opacity-50 cursor-pointer touch-manipulation focus-visible:ring-2 focus-visible:ring-white/60 outline-none"
       >
-        {loading ? 'Adding…' : 'Add patient profile'}
+        {loading ? 'Initializing graph...' : 'Initialize Patient Graph'}
       </button>
     </form>
   )

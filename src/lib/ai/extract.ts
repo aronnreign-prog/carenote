@@ -34,7 +34,7 @@ export const ClinicalExtractionSchema = z.object({
   encounterContext: z
     .string()
     .optional()
-    .describe('1–3 sentence verbatim or closely paraphrased description of why the patient was seen: chief complaint, reason for visit, referral indication, or document purpose.'),
+    .describe('1-3 sentence verbatim or closely paraphrased description of why the patient was seen: chief complaint, reason for visit, referral indication, or document purpose.'),
 
   // ── Medications ────────────────────────────────────────────────────────────
   medications: z
@@ -68,7 +68,7 @@ export const ClinicalExtractionSchema = z.object({
           .string()
           .optional()
           .describe('ISO 8601 date the sample was collected or result was reported, if visible.'),
-        referenceRange: z.string().optional().describe('Normal range as printed on the report, e.g. "70–110 mg/dL".'),
+        referenceRange: z.string().optional().describe('Normal range as printed on the report, e.g. "70-110 mg/dL".'),
         flag: z
           .enum(['NORMAL', 'HIGH', 'LOW', 'ABNORMAL'])
           .optional()

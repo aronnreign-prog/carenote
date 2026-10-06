@@ -90,19 +90,19 @@ export default function DocumentUploader({
           <input type="file" accept=".pdf" multiple className="hidden" onChange={handleUpload} disabled={uploading} />
           <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-accent text-background font-mono text-[11px] font-semibold hover:opacity-90 transition-opacity">
             {uploading ? (
-              'Uploading...'
+              'Indexing records...'
             ) : (
               <>
                 <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                   <path d="M6 2.5v7M2.5 6h7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                 </svg>
-                Upload PDF
+                Index Clinical Records (PDF)
               </>
             )}
           </span>
         </label>
         <p className="font-mono text-[9px] text-muted-foreground mt-2">
-          One document per visit · Select multiple PDFs
+          One record per encounter · Connects across time into patient graph
         </p>
       </div>
     )
@@ -112,7 +112,7 @@ export default function DocumentUploader({
     <label className="cursor-pointer inline-flex items-center">
       <input type="file" accept=".pdf" multiple className="hidden" onChange={handleUpload} disabled={uploading} />
       <span className="font-mono text-[10px] text-accent hover:text-foreground transition-colors font-medium">
-        {uploading ? 'Uploading...' : '+ Upload'}
+        {uploading ? 'Indexing...' : '+ Index Record'}
       </span>
     </label>
   )

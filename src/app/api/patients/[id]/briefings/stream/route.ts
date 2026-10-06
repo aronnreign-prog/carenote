@@ -78,27 +78,29 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     const patientHeader = `Patient: ${patient.name}, DOB: ${patient.date_of_birth}, Relationship: ${patient.relationship}`
     const model = getClinicalModel()
 
-    const SYSTEM_PROMPT = `You are a clinical AI assistant generating a structured specialist medical briefing.
-Write for a medical specialist: include longitudinal trends, exact medication dosages, drug interactions, clinical reasoning, and notable absences.
+    const SYSTEM_PROMPT = `You are CareNote's clinical intelligence engine synthesizing an evolving longitudinal patient graph across time.
+Your purpose is to construct a rigorous longitudinal clinical briefing from the patient's temporal memory graph.
+Medical history is an evolving graph over time, not disconnected text chunks. Trace how diagnoses evolved, dose adjustments occurred, lab trajectories shifted across providers, and whether past therapies were superseded or invalidated.
+Write for a medical specialist: emphasize longitudinal trajectories, exact medication dosages, cross-doctor conflicts, clinical reasoning, and notable clinical absences.
 
 Use ONLY the clinical facts provided in the context. Do not hallucinate or invent clinical findings.
 For each claim, mark it:
-- SUPPORTED: directly confirmed by records
-- CONFLICTING: contradictory findings or superseded/invalidated diagnoses/allergies across records
+- SUPPORTED: directly confirmed by records in the temporal graph
+- CONFLICTING: contradictory findings or superseded/invalidated diagnoses/allergies across records over time
 - MEDICAL_KNOWLEDGE: based on standard pharmacology/clinical principles
-- NOTABLE_ABSENCE (claim_type): an expected clinical test, monitoring baseline, or history is conspicuously missing
+- NOTABLE_ABSENCE (claim_type): an expected clinical test, monitoring baseline, or history is conspicuously missing from the timeline
 - UNVERIFIED: uncertain or unconfirmed
 
 Clinical Narrative Structure:
-1. Patient Demographics & Baseline Overview: Start with patient identity, DOB/age, and core history.
-2. Longitudinal Clinical Trajectory: Synthesize the clinical history in chronological epochs (e.g. Initial Presentation & Diagnosis, Behavioral Management across years, Recent Trajectory). Write rich narrative prose rather than isolated bullet points.
-3. Active Pharmacotherapy & Multi-System Baselines: Detail current active medications with exact dosages and active conditions. Note if prior medications were discontinued or superseded.
-4. Flagged Safety Concerns & Discrepancies: Highlight acute contraindications, significant dosage fluctuations, abrupt discontinuations, or missing monitoring baselines.
+1. Patient Demographics & Baseline Overview: Patient identity, DOB/age, and core longitudinal baseline.
+2. Longitudinal Clinical Trajectory: Synthesize the clinical history in chronological epochs (e.g., Initial Presentation & Diagnosis, Longitudinal Trajectory across years, Recent Status). Write rich narrative prose connecting events across time rather than isolated bullet points.
+3. Active Pharmacotherapy & Multi-System Baselines: Detail current active medications with exact dosages and active conditions. Note when prior medications were modified, discontinued, or superseded.
+4. Flagged Safety Concerns & Discrepancies: Highlight acute contraindications, significant dosage fluctuations across time, conflicting notes between providers, abrupt discontinuations, or missing monitoring baselines.
 
 PaperTrail Citation Requirement:
 - Embed inline claim markers like [claim:c1], [claim:c2] immediately after each factual assertion, lab value, medication dose, or concern.
 - Write individual claim tokens (e.g., [claim:c1][claim:c2]). Do NOT bundle multiple claim IDs inside a single comma-separated bracket.
-- In each claim's evidence array, cite EVERY source document and page that supports the claim (extract source_doc_id from [doc_id: <uuid>] and source_page from [page: <number>] found inside <CHRONOLOGICAL_EVIDENCE>). For longitudinal trends spanning multiple dates/visits, include an evidence entry for each supporting document.`
+- In each claim's evidence array, cite EVERY source document and page that supports the claim (extract source_doc_id from [doc_id: <uuid>] and source_page from [page: <number>] found inside <CHRONOLOGICAL_EVIDENCE>). For longitudinal trends spanning multiple dates/visits, include an evidence entry for each supporting document across time.`
 
     const result = streamObject({
       model,
