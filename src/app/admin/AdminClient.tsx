@@ -413,7 +413,7 @@ export function AdminClient({ currentUserEmail, users, pendingRequests = [] }: P
                   disabled={creating}
                   className="bg-white text-black font-medium text-xs px-4 py-2 rounded-lg hover:bg-white/90 disabled:opacity-50 transition-colors shrink-0 cursor-pointer shadow-sm"
                 >
-                  {creating ? 'Creating…' : 'Create'}
+                  {creating ? 'Creating...' : 'Create'}
                 </button>
               </div>
             </div>
@@ -437,7 +437,7 @@ export function AdminClient({ currentUserEmail, users, pendingRequests = [] }: P
                     <th className="py-3 px-4">Status</th>
                     <th className="py-3 px-4">Created</th>
                     <th className="py-3 px-4 text-center">Patients</th>
-                    <th className="py-3 px-4 text-center">Docs</th>
+                    <th className="py-3 px-4 text-center">Records</th>
                     <th className="py-3 px-4 text-right">Actions</th>
                   </tr>
                 </thead>

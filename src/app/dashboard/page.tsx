@@ -99,7 +99,7 @@ export default async function DashboardPage() {
         )}
 
         <div className="flex-1 overflow-y-auto px-2 py-4">
-          <p className="font-mono text-[9px] tracking-widest text-white/40 uppercase px-3 mb-2">Patients</p>
+          <p className="font-mono text-[9px] tracking-widest text-white/40 uppercase px-3 mb-2">Patient Graphs</p>
           {patients.map((p) => (
             <div key={p.id} className="group relative flex items-center rounded-lg hover:bg-white/[0.04] transition-colors">
               <Link href={`/dashboard/patients/${p.id}`}
@@ -121,7 +121,7 @@ export default async function DashboardPage() {
             </div>
           ))}
           {patients.length === 0 && (
-            <p className="px-3 py-4 text-xs text-white/40">No patients yet.</p>
+            <p className="px-3 py-4 text-xs text-white/40">No patient graphs initialized.</p>
           )}
         </div>
 
@@ -146,7 +146,7 @@ export default async function DashboardPage() {
                 {caregiver?.name ?? 'My workspace'}
               </h1>
               <p className="font-mono text-[9px] sm:text-[10px] text-muted-foreground mt-0.5">
-                {`${patients.length} patient${patients.length !== 1 ? 's' : ''}`}
+                {`${patients.length} patient graph${patients.length !== 1 ? 's' : ''}`}
               </p>
             </div>
           </div>

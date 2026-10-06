@@ -23,8 +23,8 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "CareNote: AI Briefing for Caregivers",
-  description: "Upload your parent's medical prescriptions and notes. Get a verified, source-cited briefing ready for their next appointment.",
+  title: "CareNote: Temporal Graph Memory & Verifiable PaperTrail",
+  description: "Medical history is an evolving graph over time, not disconnected text chunks. CareNote stores clinical facts in temporal memory with an instant PaperTrail linking every claim to its source.",
   icons: {
     icon: [
       { url: "/icon.png", sizes: "32x32", type: "image/png" },

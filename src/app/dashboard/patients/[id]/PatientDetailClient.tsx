@@ -412,11 +412,11 @@ export default function PatientDetailClient({ patient, initialDocuments, initial
     const q = (customQuestion || queryInput).trim()
     if (!q) return
     if (isGuest) {
-      alert('Sign in to run on-demand record queries.')
+      alert('Sign in to query patient temporal memory.')
       return
     }
     if (documents.length === 0) {
-      alert('Please upload at least one document before asking questions.')
+      alert('Please index at least one medical record before querying.')
       return
     }
 
@@ -1036,7 +1036,7 @@ export default function PatientDetailClient({ patient, initialDocuments, initial
                         onClick={() => setIsRecordsDrawerOpen(true)}
                         className="md:hidden border border-border bg-surface-raised font-mono text-[11px] px-3.5 py-2 rounded text-foreground hover:border-accent/40 transition-colors mb-3 inline-flex items-center gap-1.5 touch-manipulation"
                       >
-                        <span>📄</span> Open Records to Upload
+                        <span>📄</span> Open Timeline to Index Records
                       </button>
                     )}
                     {!isGuest && documents.length > 0 && (

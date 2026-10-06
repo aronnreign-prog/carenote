@@ -21,7 +21,7 @@ export async function addPatient(formData: FormData): Promise<{ error?: string }
     revalidatePath('/dashboard')
     return {}
   } catch (err) {
-    return { error: err instanceof Error ? err.message : 'Failed to add patient' }
+    return { error: err instanceof Error ? err.message : 'Failed to initialize patient graph' }
   }
 }
 
@@ -50,7 +50,7 @@ export async function deletePatient(patientId: string): Promise<{ error?: string
     revalidatePath('/dashboard')
     return {}
   } catch (err) {
-    return { error: err instanceof Error ? err.message : 'Failed to delete patient' }
+    return { error: err instanceof Error ? err.message : 'Failed to delete patient graph' }
   }
 }
 
@@ -63,7 +63,7 @@ export async function deleteDocument(patientId: string, documentId: string): Pro
     .from(documents)
     .where(and(eq(documents.id, documentId), eq(documents.patient_id, patientId), eq(documents.caregiver_id, caregiver.id)))
     .limit(1)
-  if (!doc) return { error: 'Document not found or unauthorized' }
+  if (!doc) return { error: 'Clinical record not found or unauthorized' }
 
   await db
     .delete(documents)

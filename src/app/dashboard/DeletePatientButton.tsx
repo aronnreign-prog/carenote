@@ -52,9 +52,9 @@ export default function DeletePatientButton({ patientId, patientName }: DeletePa
             <path d="M7 2v5M7 9.5v.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
           </svg>
         </div>
-        <p className="font-mono text-[10px] tracking-widest uppercase text-alert">Delete patient</p>
-        <p className="text-[11px] text-center text-muted-foreground leading-relaxed max-w-[180px]">
-          Remove <span className="text-foreground font-medium">{patientName}</span> and all their records? This cannot be undone.
+        <p className="font-mono text-[10px] tracking-widest uppercase text-alert">Delete patient graph</p>
+        <p className="text-[11px] text-center text-muted-foreground leading-relaxed max-w-[200px]">
+          Remove <span className="text-foreground font-medium">{patientName}</span> and purge their temporal memory graph? This cannot be undone.
         </p>
         {err && (
           <p className="font-mono text-[10px] text-alert text-center">{err}</p>
@@ -77,7 +77,7 @@ export default function DeletePatientButton({ patientId, patientName }: DeletePa
                 <svg className="animate-spin" width="10" height="10" viewBox="0 0 10 10" fill="none">
                   <path d="M5 1v2M5 7v2M1 5h2M7 5h2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
                 </svg>
-                Deleting…
+                Purging graph...
               </>
             ) : 'Delete'}
           </button>
@@ -89,7 +89,7 @@ export default function DeletePatientButton({ patientId, patientName }: DeletePa
   return (
     <button
       onClick={handleDeleteClick}
-      title={`Delete ${patientName}`}
+      title={`Delete ${patientName} graph`}
       className="
         opacity-0 group-hover:opacity-100
         transition-opacity duration-150

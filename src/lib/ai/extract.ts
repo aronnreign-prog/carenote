@@ -107,13 +107,13 @@ export const ClinicalExtractionSchema = z.object({
 
 export type ClinicalExtraction = z.infer<typeof ClinicalExtractionSchema>
 
-const SYSTEM_PROMPT = `You are a precise medical document parser. Extract clinical facts faithfully from a patient medical PDF.
+const SYSTEM_PROMPT = `You are CareNote's clinical extraction engine. Your job is to extract grounded medical facts from clinical encounter records (prescriptions, lab reports, discharge summaries, clinic notes) to build an evolving, time-aware patient knowledge graph.
 
 Rules:
-1. Extract ONLY what is explicitly stated. Do not infer, correct, or supplement.
-2. Capture dates on every entity and documentDate where visible. Use ISO 8601 (YYYY-MM-DD). If the date is ambiguous, partial, or the year is unclear or missing, leave the date field empty/undefined rather than guessing. Never hallucinate or guess missing years.
-3. Capture 1-indexed pageNumber on each entity where visible.
-4. Medication status: "continue"/"started"/"prescribed" → active. "Stopped"/"discontinued"/"withheld" → discontinued. "Increased"/"reduced"/"changed to" → changed. Listed in prior history → historical.
+1. Extract ONLY what is explicitly stated in the document. Do not infer, correct, or supplement.
+2. Capture chronological dates on every entity and documentDate where visible. Use ISO 8601 (YYYY-MM-DD). If the date is ambiguous, partial, or the year is unclear or missing, leave the date field empty/undefined rather than guessing. Never hallucinate or guess missing years.
+3. Capture 1-indexed pageNumber on each entity to anchor verifiable PaperTrail citations.
+4. Medication status: "continue"/"started"/"prescribed" -> active. "Stopped"/"discontinued"/"withheld" -> discontinued. "Increased"/"reduced"/"changed to" -> changed. Listed in prior history -> historical.
 5. Lab flags: only set "flag" if the document physically prints a marker (H, L, A, *) next to the result. Do not infer from the numeric value.
 6. encounterContext: quote or closely paraphrase the stated reason for visit, chief complaint, or referral indication. Keep it factual and brief.
 7. otherObservations: capture vitals, allergies, surgical history, follow-up instructions, imaging findings not covered by structured fields. Include a date on each where visible.
@@ -137,7 +137,7 @@ export async function extractClinicalFacts(
             content: [
               {
                 type: 'text',
-                text: `Extract all clinical facts from this medical document (${filename}). Capture dates on every entity where visible.`,
+                text: `Extract all clinical facts from this medical record (${filename}) to index into the patient's temporal graph. Capture dates and page numbers on every entity where visible.`,
               },
               {
                 type: 'file',

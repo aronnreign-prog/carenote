@@ -76,7 +76,8 @@ export default function DocumentList({
                   <div className="min-w-0">
                     <p className="text-[11px] text-foreground font-mono truncate">{doc.filename}</p>
                     <p className="font-mono text-[9px] text-muted-foreground mt-0.5">
-                      {new Date(doc.uploaded_at).toLocaleDateString()}
+                      {doc.document_date ? `Encounter: ${doc.document_date}` : new Date(doc.uploaded_at).toLocaleDateString()}
+                      {doc.document_type ? ` · ${doc.document_type}` : ''}
                     </p>
                   </div>
                 </div>
@@ -84,13 +85,13 @@ export default function DocumentList({
                   <button
                     onClick={async (e) => {
                       e.stopPropagation()
-                      if (confirm(`Delete document ${doc.filename}? This will remove its graph data.`)) {
+                      if (confirm(`Delete record ${doc.filename}? This will prune its facts from the patient graph.`)) {
                         const result = await deleteDocument(patientId, doc.id)
                         if (result?.error) { alert(`Failed to delete: ${result.error}`); return }
                         onDocumentRemoved(doc.id)
                       }
                     }}
-                    title="Delete document and purge graph data"
+                    title="Delete record and prune from patient graph"
                     className="opacity-0 group-hover:opacity-100 transition-opacity p-1 text-muted-foreground hover:text-alert rounded"
                   >
                     <svg width="12" height="12" viewBox="0 0 12 12" fill="none">

@@ -27,7 +27,7 @@ export default function DocumentUploader({
   const router = useRouter()
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (isGuest) { alert('Sign in to upload documents.'); return }
+    if (isGuest) { alert('Sign in to index clinical records.'); return }
     const files = Array.from(e.target.files || [])
     if (files.length === 0) return
 
@@ -75,7 +75,7 @@ export default function DocumentUploader({
       }
     }
 
-    if (err > 0) alert(`Uploaded ${ok} of ${pdfs.length}. ${err} failed.`)
+    if (err > 0) alert(`Indexed ${ok} of ${pdfs.length}. ${err} failed.`)
     router.refresh()
     onUploadStart(false)
     e.target.value = ''

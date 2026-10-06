@@ -1,6 +1,6 @@
 'use client'
 
-const PIPELINE_STEPS = ['Uploaded', 'Extracting', 'Ready']
+const PIPELINE_STEPS = ['Uploaded', 'Extracting', 'Graph Indexed']
 
 function pipelineStep(status: string): number {
   if (status === 'uploaded') return 0
