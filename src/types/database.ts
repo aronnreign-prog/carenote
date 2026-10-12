@@ -28,8 +28,8 @@ export interface ClinicalRecord {
   status: string
   uploaded_at: string | Date
   processed_at?: string | Date | null
-  document_date?: string | null
-  document_type?: string | null
+  record_date?: string | null
+  record_type?: string | null
   error_message?: string | null
 }
 
@@ -40,7 +40,7 @@ export interface ClinicalSynthesis {
   status: string
   created_at: string | Date
   completed_at?: string | Date | null
-  source_doc_ids?: unknown
+  source_record_ids?: unknown
   synthesis_text?: string | null
   claims?: unknown
   flagged_concerns?: unknown

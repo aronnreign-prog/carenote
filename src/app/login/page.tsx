@@ -116,7 +116,7 @@ export default function LoginPage() {
                   autoComplete="email"
                   spellCheck={false}
                   inputMode="email"
-                  placeholder="you@example.com"
+                  placeholder="name@institution.org"
                   className="w-full min-h-[42px] bg-[#0A0E14] border border-[#1F2937] rounded-lg px-3.5 py-2 text-[13px] text-white placeholder:text-white/30 focus:outline-none focus:border-white/40 focus:ring-1 focus:ring-white/30 transition-colors"
                 />
               </div>

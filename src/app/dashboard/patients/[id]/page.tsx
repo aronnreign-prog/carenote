@@ -44,8 +44,8 @@ export default async function PatientPage({ params }: { params: Promise<{ id: st
       status: clinicalRecordsTable.status,
       uploaded_at: clinicalRecordsTable.uploaded_at,
       processed_at: clinicalRecordsTable.processed_at,
-      document_date: clinicalRecordsTable.document_date,
-      document_type: clinicalRecordsTable.document_type,
+      record_date: clinicalRecordsTable.record_date,
+      record_type: clinicalRecordsTable.record_type,
       error_message: clinicalRecordsTable.error_message,
     }).from(clinicalRecordsTable).where(
       and(
@@ -62,7 +62,7 @@ export default async function PatientPage({ params }: { params: Promise<{ id: st
       synthesis_text: clinicalSynthesesTable.synthesis_text,
       claims: clinicalSynthesesTable.claims,
       flagged_concerns: clinicalSynthesesTable.flagged_concerns,
-      source_doc_ids: clinicalSynthesesTable.source_doc_ids,
+      source_record_ids: clinicalSynthesesTable.source_record_ids,
       created_at: clinicalSynthesesTable.created_at,
       completed_at: clinicalSynthesesTable.completed_at,
       error_message: clinicalSynthesesTable.error_message,

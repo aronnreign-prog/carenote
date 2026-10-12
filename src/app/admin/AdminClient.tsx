@@ -375,7 +375,6 @@ export function AdminClient({ currentUserEmail, users, pendingRequests = [] }: P
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Dr. Eleanor Vance"
                 className="w-full bg-black/40 border border-white/[0.1] rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-accent transition-colors"
               />
             </div>

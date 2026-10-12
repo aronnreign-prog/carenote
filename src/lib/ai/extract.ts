@@ -12,12 +12,12 @@ import { z } from 'zod'
 import { getClinicalModel } from './model'
 
 export const ClinicalExtractionSchema = z.object({
-  // ── Document identity ──────────────────────────────────────────────────────
-  documentDate: z
+  // ── Clinical record identity ───────────────────────────────────────────────
+  recordDate: z
     .string()
     .optional()
-    .describe('Primary date of this document (ISO 8601, e.g. 2024-03-14). Use encounter date, test date, or issue date - whichever best represents when this document was created.'),
-  documentType: z
+    .describe('Primary date of this clinical record (ISO 8601, e.g. 2024-03-14). Use encounter date, test date, or issue date - whichever best represents when this clinical record was created.'),
+  recordType: z
     .string()
     .optional()
     .describe('e.g. Lab Report, Discharge Summary, Outpatient Prescription, Clinic Note, Radiology Report, Referral Letter'),
@@ -34,7 +34,7 @@ export const ClinicalExtractionSchema = z.object({
   encounterContext: z
     .string()
     .optional()
-    .describe('1-3 sentence verbatim or closely paraphrased description of why the patient was seen: chief complaint, reason for visit, referral indication, or document purpose.'),
+    .describe('1-3 sentence verbatim or closely paraphrased description of why the patient was seen: chief complaint, reason for visit, referral indication, or clinical record purpose.'),
 
   // ── Medications ────────────────────────────────────────────────────────────
   medications: z
@@ -110,11 +110,11 @@ export type ClinicalExtraction = z.infer<typeof ClinicalExtractionSchema>
 const SYSTEM_PROMPT = `You are CareNote's clinical extraction engine. Your job is to extract grounded medical facts from clinical encounter records (prescriptions, lab reports, discharge summaries, clinic notes) to build an evolving, time-aware patient knowledge graph.
 
 Rules:
-1. Extract ONLY what is explicitly stated in the document. Do not infer, correct, or supplement.
-2. Capture chronological dates on every entity and documentDate where visible. Use ISO 8601 (YYYY-MM-DD). If the date is ambiguous, partial, or the year is unclear or missing, leave the date field empty/undefined rather than guessing. Never hallucinate or guess missing years.
+1. Extract ONLY what is explicitly stated in the clinical record. Do not infer, correct, or supplement.
+2. Capture chronological dates on every entity and recordDate where visible. Use ISO 8601 (YYYY-MM-DD). If the date is ambiguous, partial, or the year is unclear or missing, leave the date field empty/undefined rather than guessing. Never hallucinate or guess missing years.
 3. Capture 1-indexed pageNumber on each entity to anchor verifiable PaperTrail citations.
 4. Medication status: "continue"/"started"/"prescribed" -> active. "Stopped"/"discontinued"/"withheld" -> discontinued. "Increased"/"reduced"/"changed to" -> changed. Listed in prior history -> historical.
-5. Lab flags: only set "flag" if the document physically prints a marker (H, L, A, *) next to the result. Do not infer from the numeric value.
+5. Lab flags: only set "flag" if the clinical record physically prints a marker (H, L, A, *) next to the result. Do not infer from the numeric value.
 6. encounterContext: quote or closely paraphrase the stated reason for visit, chief complaint, or referral indication. Keep it factual and brief.
 7. otherObservations: capture vitals, allergies, surgical history, follow-up instructions, imaging findings not covered by structured fields. Include a date on each where visible.
 8. Never hallucinate drug names, lab values, or diagnoses.`

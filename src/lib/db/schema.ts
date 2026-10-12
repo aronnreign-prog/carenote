@@ -81,8 +81,8 @@ export const clinicalRecords = pgTable('clinical_records', {
   status: text('status').notNull().default('uploaded'),
   uploaded_at: timestamp('uploaded_at').defaultNow().notNull(),
   processed_at: timestamp('processed_at'),
-  document_date: text('document_date'),
-  document_type: text('document_type'),
+  record_date: text('record_date'),
+  record_type: text('record_type'),
   error_message: text('error_message'),
 })
 
@@ -93,7 +93,7 @@ export const clinicalSyntheses = pgTable('clinical_syntheses', {
   status: text('status').notNull().default('queued'),
   created_at: timestamp('created_at').defaultNow().notNull(),
   completed_at: timestamp('completed_at'),
-  source_doc_ids: jsonb('source_doc_ids'),
+  source_record_ids: jsonb('source_record_ids'),
   synthesis_text: text('synthesis_text'),
   claims: jsonb('claims'),
   flagged_concerns: jsonb('flagged_concerns'),

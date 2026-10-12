@@ -44,12 +44,12 @@ export function serializeEncounterToGraphEpisode(
   recordId: string,
   filename: string,
 ): string {
-  const encounterDate = extraction.documentDate ?? 'Date unknown / not documented'
+  const encounterDate = extraction.recordDate ?? 'Date unknown / not documented'
   const lines: string[] = []
 
   // ── Encounter context header ──────────────────────────────────────────────
-  lines.push(`CLINICAL ENCOUNTER RECORD: ${filename} (document_id: ${recordId})`)
-  lines.push(`Record type: ${extraction.documentType ?? 'Unspecified'}`)
+  lines.push(`CLINICAL ENCOUNTER RECORD: ${filename} (record_id: ${recordId})`)
+  lines.push(`Record type: ${extraction.recordType ?? 'Unspecified'}`)
   lines.push(`Encounter date: ${encounterDate}`)
   if (extraction.provider) lines.push(`Provider: ${extraction.provider}`)
   if (extraction.specialty) lines.push(`Specialty: ${extraction.specialty}`)
@@ -59,12 +59,12 @@ export function serializeEncounterToGraphEpisode(
   if (extraction.lab_values.length > 0) {
     lines.push('\nLAB RESULTS:')
     for (const lab of extraction.lab_values) {
-      const onDate = lab.date ? `On ${lab.date}` : (extraction.documentDate ? `On ${extraction.documentDate}` : 'Date unknown')
+      const onDate = lab.date ? `On ${lab.date}` : (extraction.recordDate ? `On ${extraction.recordDate}` : 'Date unknown')
       const val = lab.unit ? `${lab.value} ${lab.unit}` : lab.value
       const range = lab.referenceRange ? ` (ref: ${lab.referenceRange})` : ''
       const flag = lab.flag ? ` [${lab.flag}]` : ''
       const page = lab.pageNumber ? ` [page: ${lab.pageNumber}]` : ''
-      lines.push(`  ${onDate}, ${lab.name} was ${val}${range}${flag}.${page} [doc_id: ${recordId}]`)
+      lines.push(`  ${onDate}, ${lab.name} was ${val}${range}${flag}.${page} [record_id: ${recordId}]`)
     }
   }
 
@@ -72,13 +72,13 @@ export function serializeEncounterToGraphEpisode(
   if (extraction.medications.length > 0) {
     lines.push('\nMEDICATIONS:')
     for (const med of extraction.medications) {
-      const onDate = med.prescribedDate ? `On ${med.prescribedDate}` : (extraction.documentDate ? `On ${extraction.documentDate}` : 'Date unknown')
+      const onDate = med.prescribedDate ? `On ${med.prescribedDate}` : (extraction.recordDate ? `On ${extraction.recordDate}` : 'Date unknown')
       const parts: string[] = [med.name]
       if (med.dose) parts.push(med.dose)
       if (med.frequency) parts.push(med.frequency)
       if (med.route) parts.push(`(${med.route})`)
       const page = med.pageNumber ? ` [page: ${med.pageNumber}]` : ''
-      lines.push(`  ${onDate}, ${parts.join(' ')} documented as ${med.status}.${page} [doc_id: ${recordId}]`)
+      lines.push(`  ${onDate}, ${parts.join(' ')} documented as ${med.status}.${page} [record_id: ${recordId}]`)
     }
   }
 
@@ -86,10 +86,10 @@ export function serializeEncounterToGraphEpisode(
   if (extraction.conditions.length > 0) {
     lines.push('\nCONDITIONS / DIAGNOSES:')
     for (const cond of extraction.conditions) {
-      const onDate = cond.onsetDate ? `As of ${cond.onsetDate}` : (extraction.documentDate ? `As of ${extraction.documentDate}` : 'Date unknown')
+      const onDate = cond.onsetDate ? `As of ${cond.onsetDate}` : (extraction.recordDate ? `As of ${extraction.recordDate}` : 'Date unknown')
       const status = cond.status ? ` (${cond.status})` : ''
       const page = cond.pageNumber ? ` [page: ${cond.pageNumber}]` : ''
-      lines.push(`  ${onDate}, ${cond.name}${status}.${page} [doc_id: ${recordId}]`)
+      lines.push(`  ${onDate}, ${cond.name}${status}.${page} [record_id: ${recordId}]`)
     }
   }
 
@@ -97,12 +97,12 @@ export function serializeEncounterToGraphEpisode(
   if (extraction.otherObservations.length > 0) {
     lines.push('\nCLINICAL NOTES:')
     for (const obs of extraction.otherObservations) {
-      lines.push(`  ${obs} [doc_id: ${recordId}]`)
+      lines.push(`  ${obs} [record_id: ${recordId}]`)
     }
   }
 
   // ── Source provenance ─────────────────────────────────────────────────────
-  lines.push(`\nSOURCE: ${filename} (document_id: ${recordId})`)
+  lines.push(`\nSOURCE: ${filename} (record_id: ${recordId})`)
 
   return lines.join('\n')
 }
@@ -173,16 +173,16 @@ export async function indexClinicalRecordFacts(
     await ensureZepUser(userId)
 
     const episodeContent = serializeEncounterToGraphEpisode(extraction, recordId, filename)
-    const encounterDate = extraction.documentDate ?? 'Date unknown / not documented'
-    const continuationHeader = `CLINICAL ENCOUNTER RECORD (CONTINUATION): ${filename} (document_id: ${recordId}) | Date: ${encounterDate}`
+    const encounterDate = extraction.recordDate ?? 'Date unknown / not documented'
+    const continuationHeader = `CLINICAL ENCOUNTER RECORD (CONTINUATION): ${filename} (record_id: ${recordId}) | Date: ${encounterDate}`
 
     const episodeSegments = segmentClinicalEpisodes(episodeContent, continuationHeader, 7500)
 
     // Only supply created_at if an authentic, verified encounter date exists in ISO format.
     // If undated/missing, do NOT pass created_at or today's timestamp so it remains strictly undated.
     let createdAt: string | undefined = undefined
-    if (extraction.documentDate && /^\d{4}-\d{2}-\d{2}/.test(extraction.documentDate)) {
-      const parsedDate = new Date(extraction.documentDate)
+    if (extraction.recordDate && /^\d{4}-\d{2}-\d{2}/.test(extraction.recordDate)) {
+      const parsedDate = new Date(extraction.recordDate)
       if (!isNaN(parsedDate.getTime())) {
         createdAt = parsedDate.toISOString()
       }
@@ -196,7 +196,7 @@ export async function indexClinicalRecordFacts(
           type: 'text',
           userId,
           createdAt,
-          metadata: { documentId: recordId },
+          metadata: { recordId },
         },
         { timeoutInSeconds: 30 }
       )
@@ -313,7 +313,7 @@ export async function queryPatientMemory(
     }
 
     if (episodesContent.length > 0) {
-      sections.push(`<CHRONOLOGICAL_EVIDENCE>\n# Source clinical records with exact [doc_id: <uuid>] and [page: <number>] anchors for citations:\n${episodesContent.map((c) => escapeXmlContent(c)).join('\n\n---\n\n')}\n</CHRONOLOGICAL_EVIDENCE>`)
+      sections.push(`<CHRONOLOGICAL_EVIDENCE>\n# Source clinical records with exact [record_id: <uuid>] (or [doc_id: <uuid>]) and [page: <number>] anchors for citations:\n${episodesContent.map((c) => escapeXmlContent(c)).join('\n\n---\n\n')}\n</CHRONOLOGICAL_EVIDENCE>`)
     }
 
     const context = sections.join('\n\n')
@@ -334,8 +334,14 @@ export async function pruneRecordFromGraph(workspaceId: string, patientId: strin
 
     if (response?.episodes && Array.isArray(response.episodes)) {
       const matchingEpisodes = response.episodes.filter((ep) => {
-        const matchesMeta = ep.metadata && (ep.metadata as Record<string, unknown>).documentId === recordId
-        const matchesContent = ep.content && (ep.content.includes(`document_id: ${recordId}`) || ep.content.includes(`[doc_id: ${recordId}]`))
+        const meta = ep.metadata as Record<string, unknown> | undefined
+        const matchesMeta = meta && (meta.recordId === recordId || meta.documentId === recordId)
+        const matchesContent =
+          ep.content &&
+          (ep.content.includes(`record_id: ${recordId}`) ||
+            ep.content.includes(`[record_id: ${recordId}]`) ||
+            ep.content.includes(`document_id: ${recordId}`) ||
+            ep.content.includes(`[doc_id: ${recordId}]`))
         return Boolean(matchesMeta || matchesContent)
       })
 

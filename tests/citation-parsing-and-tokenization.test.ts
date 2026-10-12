@@ -7,7 +7,7 @@ interface Claim {
   claim_type?: string
   flag?: string
   evidence?: Array<{
-    source_doc_id?: string
+    source_record_id?: string
     source_page?: number
     source_quote?: string
     entry_text?: string
@@ -16,8 +16,8 @@ interface Claim {
 
 interface ClinicalRecordItem {
   id: string
-  document_type?: string | null
-  document_date?: string | null
+  record_type?: string | null
+  record_date?: string | null
 }
 
 interface ParsedToken {
@@ -72,7 +72,7 @@ function tokenizeAndResolveClaims(
             chipType = 'unverified'
           } else {
             const firstEv = evidenceList[0]
-            const rec = firstEv.source_doc_id ? records.find((r) => r.id === firstEv.source_doc_id) : undefined
+            const rec = firstEv.source_record_id ? records.find((r) => r.id === firstEv.source_record_id) : undefined
             if (!rec) {
               chipType = 'unverified'
             } else {
@@ -81,8 +81,8 @@ function tokenizeAndResolveClaims(
           }
         }
 
-        const evidenceRecord = claim.evidence?.[0]?.source_doc_id
-          ? records.find((r) => r.id === claim.evidence![0].source_doc_id)
+        const evidenceRecord = claim.evidence?.[0]?.source_record_id
+          ? records.find((r) => r.id === claim.evidence![0].source_record_id)
           : undefined
 
         results.push({
@@ -107,24 +107,24 @@ function tokenizeAndResolveClaims(
 
 describe('Citation Tokenization & Claim Resolution (PatientDetailClient)', () => {
   const mockRecords: ClinicalRecordItem[] = [
-    { id: 'rec-1', document_type: 'Discharge Summary', document_date: '2026-01-10' },
-    { id: 'rec-2', document_type: 'Lab Report', document_date: '2026-02-14' },
+    { id: 'rec-1', record_type: 'Discharge Summary', record_date: '2026-01-10' },
+    { id: 'rec-2', record_type: 'Lab Report', record_date: '2026-02-14' },
   ]
 
   const mockClaims: Record<string, Claim> = {
     c1: {
       claim_id: 'c1',
       claim_text: 'Admitted for acute heart failure exacerbation',
-      claim_type: 'source_document',
+      claim_type: 'source_record',
       flag: 'SUPPORTED',
-      evidence: [{ source_doc_id: 'rec-1', source_page: 1 }],
+      evidence: [{ source_record_id: 'rec-1', source_page: 1 }],
     },
     c2: {
       claim_id: 'c2',
       claim_text: 'Conflicting allergy notes: penicillin noted as tolerated then allergic',
-      claim_type: 'source_document',
+      claim_type: 'source_record',
       flag: 'CONFLICTING',
-      evidence: [{ source_doc_id: 'rec-1', source_page: 3 }],
+      evidence: [{ source_record_id: 'rec-1', source_page: 3 }],
     },
     c3: {
       claim_id: 'c3',
@@ -140,9 +140,9 @@ describe('Citation Tokenization & Claim Resolution (PatientDetailClient)', () =>
     c5: {
       claim_id: 'c5',
       claim_text: 'Claim citing pruned clinical record',
-      claim_type: 'source_document',
+      claim_type: 'source_record',
       flag: 'SUPPORTED',
-      evidence: [{ source_doc_id: 'pruned-rec-uuid', source_page: 1 }],
+      evidence: [{ source_record_id: 'pruned-rec-uuid', source_page: 1 }],
     },
   }
 

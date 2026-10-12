@@ -1,5 +1,5 @@
 export type EvidenceItem = {
-  source_doc_id?: string
+  source_record_id?: string
   source_page?: number
   source_quote?: string
   entry_text?: string

@@ -49,7 +49,7 @@ export default function InitializePatientGraphForm() {
                 <input
                   name="name"
                   required
-                  placeholder="Margaret Thompson"
+                  placeholder="Patient R.K."
                   className="w-full bg-surface-raised border border-border rounded px-3 py-2 text-[16px] sm:text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-accent"
                 />
               </div>

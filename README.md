@@ -11,7 +11,7 @@ When a clinician, care coordinator, or patient generates a **Longitudinal Clinic
 ## Core Architectural Pillars
 
 ### 1. Bi-Temporal Clinical Graph Memory (`src/lib/zep/ingest.ts`)
-Standard vector RAG chops medical PDFs into isolated paragraphs and loses track of whether a medication was started, titrated, or discontinued across encounters. CareNote serializes each clinical encounter (`serializeEncounterToGraphEpisode`) with explicit temporal anchors (`referenceTime`) and provenance tags (`[doc_id: <uuid>]`, `[page: <number>]`) into a per-patient Zep Context Graph.
+Standard vector RAG chops medical PDFs into isolated paragraphs and loses track of whether a medication was started, titrated, or discontinued across encounters. CareNote serializes each clinical encounter (`serializeEncounterToGraphEpisode`) with explicit temporal anchors (`createdAt`) and provenance tags (`[record_id: <uuid>]`, `[page: <number>]`) into a per-patient Zep Context Graph.
 - **3-Layer Graph Retrieval (`queryPatientMemory`)**:
   1. **Longitudinal Entity Nodes**: Canonical medications, diagnoses, lab markers, and clinicians.
   2. **Chronological Episodes**: Full encounter records with page-level provenance anchors.
@@ -19,7 +19,7 @@ Standard vector RAG chops medical PDFs into isolated paragraphs and loses track 
 
 ### 2. Multimodal Clinical Record Extraction (`src/lib/ai/extract.ts`)
 Raw PDFs are analyzed visually by Gemini 2.5 Flash against `ClinicalExtractionSchema`, capturing:
-- Encounter metadata (`documentDate`, `documentType`, `provider`, `specialty`, `encounterContext`)
+- Encounter metadata (`recordDate`, `recordType`, `provider`, `specialty`, `encounterContext`)
 - Medications (`name`, `dose`, `frequency`, `route`, `status`, `prescribedDate`, `pageNumber`)
 - Lab values (`name`, `value`, `unit`, `referenceRange`, `flag`, `date`, `pageNumber`)
 - Conditions & diagnoses (`name`, `status`, `onsetDate`, `pageNumber`)

@@ -10,6 +10,7 @@ import { deleteClinicalSynthesis } from '@/app/dashboard/actions'
 import { FlaggedBanner } from '@/components/clinical'
 
 type EvidenceItem = {
+  source_record_id?: string
   source_doc_id?: string
   source_page?: number
   source_quote?: string
@@ -102,7 +103,7 @@ function CitationChip({
   return (
     <>
       {evidenceList.map((ev, idx) => {
-        const recordId = ev.source_doc_id
+        const recordId = ev.source_record_id ?? ev.source_doc_id
         const page = ev.source_page
         const record = recordId ? records.find((r) => r.id === recordId) : undefined
 
@@ -119,8 +120,8 @@ function CitationChip({
           )
         }
 
-        const typeLabel = record.document_type || 'Record'
-        const dateLabel = record.document_date ? formatShortDate(record.document_date) : 'Undated'
+        const typeLabel = record.record_type || 'Record'
+        const dateLabel = record.record_date ? formatShortDate(record.record_date) : 'Undated'
         const pageLabel = page && page > 1 ? ` · p.${page}` : ''
         const label = `${typeLabel} · ${dateLabel}${pageLabel}`
         const title = ev.source_quote || ev.entry_text || claim.claim_text || ''
@@ -295,7 +296,7 @@ export default function PatientDetailClient({ patient, initialRecords, initialSy
         patient_id: patient.id,
         workspace_id: patient.workspace_id,
         status: 'queued',
-        source_doc_ids: records.map(r => r.id),
+        source_record_ids: records.map(r => r.id),
         created_at: new Date().toISOString()
       }
 

@@ -311,7 +311,6 @@ export function DemoRequestModal({
                       autoCapitalize="words"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      placeholder="e.g. Dr. Sarah Jenkins"
                       className="w-full min-h-[40px] bg-[#0A0E14] border border-[#1F2937] focus:border-white/40 focus:ring-1 focus:ring-white/30 rounded-lg px-3.5 py-2 text-[13px] text-white placeholder:text-white/30 outline-none transition-colors"
                     />
                   </div>

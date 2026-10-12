@@ -11,11 +11,11 @@ describe('AI Output Schemas & Validation Contracts', () => {
           {
             claim_id: 'c1',
             claim_text: 'HbA1c was elevated at 7.2%',
-            claim_type: 'source_document',
+            claim_type: 'source_record',
             flag: 'SUPPORTED',
             evidence: [
               {
-                source_doc_id: 'doc-uuid-1',
+                source_record_id: 'rec-uuid-1',
                 source_page: 2,
                 source_quote: 'HbA1c: 7.2%',
                 entry_text: 'Routine outpatient lab panel',
@@ -25,11 +25,11 @@ describe('AI Output Schemas & Validation Contracts', () => {
           {
             claim_id: 'c2',
             claim_text: 'Metformin 500mg BID started',
-            claim_type: 'source_document',
+            claim_type: 'source_record',
             flag: 'SUPPORTED',
             evidence: [
               {
-                source_doc_id: 'doc-uuid-2',
+                source_record_id: 'rec-uuid-2',
                 source_page: 1,
                 source_quote: 'Rx: Metformin 500mg PO BID',
               },
@@ -56,13 +56,13 @@ describe('AI Output Schemas & Validation Contracts', () => {
           {
             claim_id: 'c1',
             claim_text: 'Source fact',
-            claim_type: 'source_document',
+            claim_type: 'source_record',
             flag: 'SUPPORTED',
           },
           {
             claim_id: 'c2',
             claim_text: 'Conflicting finding across visits',
-            claim_type: 'source_document',
+            claim_type: 'source_record',
             flag: 'CONFLICTING',
           },
           {
@@ -138,7 +138,7 @@ describe('AI Output Schemas & Validation Contracts', () => {
             flag: 'SUPPORTED',
             evidence: [
               {
-                source_doc_id: 'doc-uuid-99',
+                source_record_id: 'rec-uuid-99',
                 source_page: 1,
                 source_quote: 'Lisinopril 10mg once daily',
                 entry_text: 'Medication list verified by physician',

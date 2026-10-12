@@ -102,8 +102,8 @@ export async function indexClinicalRecord(recordId: string): Promise<{ error?: s
 
     await db.update(clinicalRecords).set({
       status: 'extracted',
-      document_date: extraction.documentDate ?? null,
-      document_type: extraction.documentType ?? null,
+      record_date: extraction.recordDate ?? null,
+      record_type: extraction.recordType ?? null,
       processed_at: new Date(),
     }).where(and(eq(clinicalRecords.id, recordId), eq(clinicalRecords.workspace_id, workspace.id)))
 
@@ -146,7 +146,7 @@ export async function createSynthesisRecord(
       patient_id: patientId,
       workspace_id: workspace.id,
       status: 'queued',
-      source_doc_ids: sourceRecordIds,
+      source_record_ids: sourceRecordIds,
     }).returning({ id: clinicalSyntheses.id })
     return { id: inserted.id }
   } catch (err) {
@@ -247,7 +247,7 @@ Clinical Narrative Structure:
 PaperTrail Citation Requirement:
 - Embed inline claim markers like [claim:c1], [claim:c2] immediately after each factual assertion, lab value, medication dose, or concern.
 - Write individual claim tokens (e.g., [claim:c1][claim:c2]). Do NOT bundle multiple claim IDs inside a single comma-separated bracket.
-- In each claim's evidence array, cite EVERY source clinical record and page that supports the claim (extract source_doc_id from [doc_id: <uuid>] and source_page from [page: <number>] found inside <CHRONOLOGICAL_EVIDENCE>). For longitudinal trends spanning multiple dates/visits, include an evidence entry for each supporting record across time.`
+- In each claim's evidence array, cite EVERY source clinical record and page that supports the claim (extract source_record_id from [record_id: <uuid>] or [doc_id: <uuid>] and source_page from [page: <number>] found inside <CHRONOLOGICAL_EVIDENCE>). For longitudinal trends spanning multiple dates/visits, include an evidence entry for each supporting record across time.`
 
     const { object } = await generateObject({
       model,
@@ -360,7 +360,7 @@ Guidelines:
 5. For every specific fact, medication dose, date, lab value, or trajectory asserted, embed an inline token like [claim:c1], [claim:c2].
 6. For each claim in the schema:
    - Mark flag: 'SUPPORTED', 'CONFLICTING', or 'MEDICAL_KNOWLEDGE'.
-   - In the evidence array, extract source_doc_id from [doc_id: <uuid>] and source_page from [page: <number>].
+   - In the evidence array, extract source_record_id from [record_id: <uuid>] or [doc_id: <uuid>] and source_page from [page: <number>].
    - If citing multiple clinical records or chronological changes over time, include an evidence item for each supporting record across the timeline.`
 
     type MessageItem = { role: 'user' | 'assistant'; content: string }

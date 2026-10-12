@@ -66,8 +66,8 @@ export default function ClinicalTimeline({
                   <div className="min-w-0">
                     <p className="text-[11px] text-foreground font-mono truncate">{record.filename}</p>
                     <p className="font-mono text-[9px] text-muted-foreground mt-0.5">
-                      {record.document_date ? `Encounter: ${record.document_date}` : new Date(record.uploaded_at).toLocaleDateString()}
-                      {record.document_type ? ` · ${record.document_type}` : ''}
+                      {record.record_date ? `Encounter: ${record.record_date}` : new Date(record.uploaded_at).toLocaleDateString()}
+                      {record.record_type ? ` · ${record.record_type}` : ''}
                     </p>
                   </div>
                 </div>

@@ -8,7 +8,7 @@ This version has breaking changes: APIs, conventions, and file structure may all
 
 # Architecture: CareNote (Longitudinal Clinical Memory & PaperTrail Synthesis)
 
-> Read [`.agents/rules/product-foundation.md`](.agents/rules/product-foundation.md) before modifying product copy, domain models, or UI components.
+> Read [`.agents/rules/product.md`](.agents/rules/product.md) before modifying product copy, domain models, or UI components.
 
 ## Stack
 
@@ -28,13 +28,12 @@ Browser (React 19) → Next.js 16.2 Server Actions → Drizzle ORM + Neon (Postg
 
 | Layer | File | Purpose |
 |---|---|---|
-| Product Foundation | `.agents/rules/product-foundation.md` | Authoritative product thesis, domain vocabulary, and anti-generic rules |
+| Product Rules | `.agents/rules/product.md` | Authoritative product thesis, domain vocabulary, and clinical specificity rules |
 | Dashboard | `src/app/dashboard/page.tsx` | Patient graph workspaces, Drizzle queries (`clinicalRecords`, `clinicalSyntheses`) |
 | Patient Detail | `src/app/dashboard/patients/[id]/page.tsx` | Parallel clinical record + synthesis fetch via Drizzle |
 | Client Modules | `PatientDetailClient.tsx`, `ClinicalRecordIndexer.tsx`, `ClinicalTimeline.tsx`, `PipelineBar.tsx` | Clinical workspace UI, record indexing, timeline inspection, and PaperTrail navigation |
 | Dashboard Actions | `src/app/dashboard/actions.ts` | `initializePatientGraph()`, `purgePatientGraph()`, `pruneClinicalRecord()`, `deleteClinicalSynthesis()` |
 | Pipeline Actions | `src/app/dashboard/patients/[id]/pipeline-actions.ts` | `indexClinicalRecord()`, `synthesizePatientGraph()`, `createClinicalRecord()`, `createSynthesisRecord()`, `askPatientClinicalQuery()` |
-| Auth Actions | `src/app/auth/actions.ts` | login, signup, logout via Better Auth |
 | Auth Config | `src/lib/auth.ts` | Better Auth instance (Drizzle adapter + Admin plugin) |
 | Auth Session | `src/lib/auth-session.ts` | `getSession()`, `getWorkspace()`: React `cache()` helpers |
 | Auth Client | `src/lib/auth-client.ts` | Browser-side Better Auth client |
@@ -56,7 +55,7 @@ Browser (React 19) → Next.js 16.2 Server Actions → Drizzle ORM + Neon (Postg
 | Zep Memory | `src/lib/zep/ingest.ts` | `indexClinicalRecordFacts()`, `queryPatientMemory()`, `pruneRecordFromGraph()`, `purgePatientGraphMemory()`: Zep Cloud V3 graph API |
 | Middleware / Proxy | `src/proxy.ts` | Better Auth edge session check, normalized path canonicalization, and route gating |
 | Error Boundary | `src/app/error.tsx` | Root error UI |
-| Types | `src/types/database.ts` | `ClinicalWorkspace`, `Patient`, `ClinicalRecord`, `ClinicalSynthesis`, `ExtractedEntities` |
+| Types | `src/types/database.ts` | `ClinicalWorkspace`, `Patient`, `ClinicalRecord`, `ClinicalSynthesis`, `DemoRequest` |
 
 ## Pipeline Flow
 
@@ -67,9 +66,9 @@ ClinicalRecordIndexer.tsx calls createClinicalRecord() → inserts DB row (statu
 ClinicalRecordIndexer.tsx calls indexClinicalRecord(recordId) (fire-and-forget server action)
   → fetch(record.blob_url) to download PDF bytes (SSRF protected)
   → extractClinicalFacts(buffer, filename)              (Gemini 2.5 Flash + Zod)
-      returns { documentDate, documentType, medications, lab_values, conditions }
+      returns { recordDate, recordType, medications, lab_values, conditions }
   → indexClinicalRecordFacts(workspaceId, patientId, ...) (Zep Cloud graph.add: { data, type: "text", userId })
-  → db.update(clinicalRecords, { status: "extracted", extracted_entities, document_date, ... })
+  → db.update(clinicalRecords, { status: "extracted", record_date, record_type, ... })
 ```
 
 ### Authenticated Record Viewing (PaperTrail)
@@ -87,11 +86,11 @@ User clicks record link or PaperTrail citation chip (#page=N)
 
 ### Longitudinal Clinical Synthesis Generation
 ```
-User clicks "Generate Longitudinal Synthesis" → createSynthesisRecord() → inserts row (status: "queued")
+User clicks "Synthesize Patient Graph" → createSynthesisRecord() → inserts row (status: "queued")
 PatientDetailClient calls synthesizePatientGraph(patientId, synthesisId)
   → queryPatientMemory(workspaceId, patientId, query)   (3-layer retrieval):
       1. Longitudinal Entity Nodes (client.graph.node.getByUserId)
-      2. Chronological Episodes (client.graph.episode.getByUserId, with [doc_id] & [page] tags)
+      2. Chronological Episodes (client.graph.episode.getByUserId, with [record_id] & [page] tags)
       3. Concurrent Multi-Domain Search (Promise.allSettled client.graph.search, with temporal invalidation)
   → generateObject({ model: gemini-2.5-flash, schema: ClinicalSynthesisSchema })
   → db.update(clinicalSyntheses, { status: "complete", synthesis_text, claims, flagged_concerns })

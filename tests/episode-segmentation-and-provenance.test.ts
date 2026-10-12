@@ -10,11 +10,11 @@ describe('Clinical Encounter Episode Serialization & Provenance Retention', () =
   const sampleRecordId = 'rec-1234-abcd'
   const sampleFilename = 'Cardiology_Consult_2026.pdf'
 
-  test('serializes comprehensive encounter episode with exact doc_id and page anchors', () => {
+  test('serializes comprehensive encounter episode with exact record_id and page anchors', () => {
     const extraction: ClinicalExtraction = {
-      documentDate: '2026-03-15',
-      documentType: 'Consultation Note',
-      provider: 'Dr. Jane Smith, MD',
+      recordDate: '2026-03-15',
+      recordType: 'Consultation Note',
+      provider: 'Dr. A. Sharma, MD',
       specialty: 'Cardiology',
       encounterContext: 'Outpatient Follow-up',
       medications: [
@@ -35,15 +35,15 @@ describe('Clinical Encounter Episode Serialization & Provenance Retention', () =
     const episode = serializeEncounterToGraphEpisode(extraction, sampleRecordId, sampleFilename)
 
     // Verify metadata presence
-    assert.ok(episode.includes(`CLINICAL ENCOUNTER RECORD: ${sampleFilename} (document_id: ${sampleRecordId})`))
+    assert.ok(episode.includes(`CLINICAL ENCOUNTER RECORD: ${sampleFilename} (record_id: ${sampleRecordId})`))
     assert.ok(episode.includes('Record type: Consultation Note'))
-    assert.ok(episode.includes('Provider: Dr. Jane Smith, MD'))
+    assert.ok(episode.includes('Provider: Dr. A. Sharma, MD'))
 
-    // Verify provenance tokens [doc_id: ...] and [page: ...]
-    assert.ok(episode.includes(`Metformin 500mg twice daily (oral) documented as active. [page: 2] [doc_id: ${sampleRecordId}]`))
-    assert.ok(episode.includes(`Lisinopril 10mg daily documented as discontinued. [page: 3] [doc_id: ${sampleRecordId}]`))
-    assert.ok(episode.includes(`Hemoglobin A1c was 6.8 % (ref: 4.0-5.6) [HIGH]. [page: 4] [doc_id: ${sampleRecordId}]`))
-    assert.ok(episode.includes(`Type 2 Diabetes Mellitus (active). [page: 1] [doc_id: ${sampleRecordId}]`))
+    // Verify provenance tokens [record_id: ...] and [page: ...]
+    assert.ok(episode.includes(`Metformin 500mg twice daily (oral) documented as active. [page: 2] [record_id: ${sampleRecordId}]`))
+    assert.ok(episode.includes(`Lisinopril 10mg daily documented as discontinued. [page: 3] [record_id: ${sampleRecordId}]`))
+    assert.ok(episode.includes(`Hemoglobin A1c was 6.8 % (ref: 4.0-5.6) [HIGH]. [page: 4] [record_id: ${sampleRecordId}]`))
+    assert.ok(episode.includes(`Type 2 Diabetes Mellitus (active). [page: 1] [record_id: ${sampleRecordId}]`))
   })
 
   test('gracefully handles missing and partial extraction fields without crash', () => {
@@ -60,12 +60,12 @@ describe('Clinical Encounter Episode Serialization & Provenance Retention', () =
     assert.ok(!episode.includes('MEDICATIONS:'))
     assert.ok(!episode.includes('LAB RESULTS:'))
     assert.ok(!episode.includes('CONDITIONS / DIAGNOSES:'))
-    assert.ok(episode.includes(`SOURCE: ${sampleFilename} (document_id: ${sampleRecordId})`))
+    assert.ok(episode.includes(`SOURCE: ${sampleFilename} (record_id: ${sampleRecordId})`))
   })
 })
 
 describe('Clinical Episode Segmentation & Continuation Preservation', () => {
-  const header = 'CLINICAL ENCOUNTER RECORD (CONTINUATION): Cardiology.pdf (document_id: rec-123) | Date: 2026-03-15'
+  const header = 'CLINICAL ENCOUNTER RECORD (CONTINUATION): Cardiology.pdf (record_id: rec-123) | Date: 2026-03-15'
 
   test('returns single episode segment when content is within maxEpisodeChars', () => {
     const content = 'Short clinical note with 100 characters.'
@@ -94,7 +94,7 @@ describe('Clinical Episode Segmentation & Continuation Preservation', () => {
   test('splits oversized single paragraph by line boundaries without data loss', () => {
     const lines: string[] = []
     for (let i = 0; i < 50; i++) {
-      lines.push(`Line ${i}: Observation data value ${i} [doc_id: test-uuid] [page: 1]`)
+      lines.push(`Line ${i}: Observation data value ${i} [record_id: test-uuid] [page: 1]`)
     }
     const longParagraph = lines.join('\n')
 

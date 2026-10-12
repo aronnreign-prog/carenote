@@ -11,8 +11,8 @@ const RK_CLINICAL_RECORDS: ClinicalRecord[] = [
     patient_id: 'rk-01',
     workspace_id: 'clinical-proof',
     filename: 'Outpatient_Labs_Mar2025.pdf',
-    document_type: 'Lab Result',
-    document_date: '2025-03-04',
+    record_type: 'Lab Result',
+    record_date: '2025-03-04',
     status: 'extracted',
     uploaded_at: '2025-03-04T09:15:00Z',
   },
@@ -21,8 +21,8 @@ const RK_CLINICAL_RECORDS: ClinicalRecord[] = [
     patient_id: 'rk-01',
     workspace_id: 'clinical-proof',
     filename: 'Hospital_Discharge_Jan2025.pdf',
-    document_type: 'Discharge Summary',
-    document_date: '2025-01-18',
+    record_type: 'Discharge Summary',
+    record_date: '2025-01-18',
     status: 'extracted',
     uploaded_at: '2025-01-18T16:40:00Z',
   },
@@ -31,8 +31,8 @@ const RK_CLINICAL_RECORDS: ClinicalRecord[] = [
     patient_id: 'rk-01',
     workspace_id: 'clinical-proof',
     filename: 'Echo_Cardio_Nov2024.pdf',
-    document_type: 'Diagnostic Report',
-    document_date: '2024-11-25',
+    record_type: 'Diagnostic Report',
+    record_date: '2024-11-25',
     status: 'extracted',
     uploaded_at: '2024-11-25T11:20:00Z',
   },
@@ -41,8 +41,8 @@ const RK_CLINICAL_RECORDS: ClinicalRecord[] = [
     patient_id: 'rk-01',
     workspace_id: 'clinical-proof',
     filename: 'UrgentCare_Nov2024.pdf',
-    document_type: 'Clinic Note',
-    document_date: '2024-11-19',
+    record_type: 'Clinic Note',
+    record_date: '2024-11-19',
     status: 'extracted',
     uploaded_at: '2024-11-19T14:30:00Z',
   },
@@ -51,8 +51,8 @@ const RK_CLINICAL_RECORDS: ClinicalRecord[] = [
     patient_id: 'rk-01',
     workspace_id: 'clinical-proof',
     filename: 'PCP_Annual_Oct2024.pdf',
-    document_type: 'Clinic Note',
-    document_date: '2024-10-14',
+    record_type: 'Clinic Note',
+    record_date: '2024-10-14',
     status: 'extracted',
     uploaded_at: '2024-10-14T10:00:00Z',
   },
@@ -62,10 +62,10 @@ const RK_CLAIMS: Record<string, Claim> = {
   c1: {
     claim_id: 'c1',
     claim_text: 'Amlodipine 10 mg daily initiated at Primary Care on 2024-10-14 alongside baseline Losartan 50 mg and Empagliflozin 10 mg',
-    claim_type: 'source_document',
+    claim_type: 'source_record',
     flag: 'SUPPORTED',
     evidence: {
-      source_doc_id: 'rec-1',
+      source_record_id: 'rec-1',
       source_quote: 'Assessment/Plan: Home BP 148/82. Start Tab Amlodipine 10 mg PO QD. Continue Losartan 50 mg QD and Empagliflozin 10 mg QD (baseline eGFR 64, Cr 1.10 mg/dL, K+ 4.3 mEq/L).',
       source_page: 2,
     },
@@ -73,10 +73,10 @@ const RK_CLAIMS: Record<string, Claim> = {
   c2: {
     claim_id: 'c2',
     claim_text: 'Bilateral pedal edema 5 weeks post-Amlodipine attributed to suspected new-onset HFpEF at Urgent Care; Furosemide 40 mg daily initiated',
-    claim_type: 'source_document',
+    claim_type: 'source_record',
     flag: 'SUPPORTED',
     evidence: {
-      source_doc_id: 'rec-2',
+      source_record_id: 'rec-2',
       source_quote: 'Impression: New bilateral lower-extremity pitting ankle edema: suspect new-onset Heart Failure (HFpEF). Start Furosemide 40 mg PO QD; order outpatient TTE and NT-proBNP.',
       source_page: 1,
     },
@@ -84,10 +84,10 @@ const RK_CLAIMS: Record<string, Claim> = {
   c3: {
     claim_id: 'c3',
     claim_text: 'Chart Lore Refuted: Copy-forwarded "HFpEF" diagnosis is directly contradicted by normal Transthoracic Echocardiogram (LVEF 62%, normal E/e\') and normal NT-proBNP (58 pg/mL)',
-    claim_type: 'source_document',
+    claim_type: 'source_record',
     flag: 'CONFLICTING',
     evidence: {
-      source_doc_id: 'rec-3',
+      source_record_id: 'rec-3',
       source_quote: 'TTE & Biomarker Conclusion: LVEF 62%, normal LV diastolic filling (E/e\' 7.2), normal LA volume, NT-proBNP 58 pg/mL (ref <125). No evidence of heart failure; ankle edema consistent with dihydropyridine CCB vasodilation.',
       source_page: 2,
     },
@@ -105,10 +105,10 @@ const RK_CLAIMS: Record<string, Claim> = {
   c5: {
     claim_id: 'c5',
     claim_text: 'Hospital admission for prerenal AKI (eGFR 64 → 36 mL/min, Cr 1.9 mg/dL) and hypokalemia (K+ 3.1 mEq/L); KCl 20 mEq added and Empagliflozin 10 mg placed on conditional hold until Cr <1.2 mg/dL',
-    claim_type: 'source_document',
+    claim_type: 'source_record',
     flag: 'SUPPORTED',
     evidence: {
-      source_doc_id: 'rec-4',
+      source_record_id: 'rec-4',
       source_quote: 'Discharge Plan: Admitted for orthostatic syncope, prerenal AKI (Cr 1.9 mg/dL, eGFR 36) & hypokalemia (K+ 3.1). Start Potassium Chloride 20 mEq PO QD. HOLD Empagliflozin 10 mg during acute AKI; resume at outpatient follow-up once serum Cr returns to <1.2 mg/dL.',
       source_page: 3,
     },
@@ -119,7 +119,7 @@ const RK_CLAIMS: Record<string, Claim> = {
     claim_type: 'notable_absence',
     flag: 'SUPPORTED',
     evidence: {
-      source_doc_id: 'rec-5',
+      source_record_id: 'rec-5',
       source_quote: 'Renal Panel (2025-03-04): Serum Creatinine 1.12 mg/dL (ref: 0.7-1.3) | eGFR 61 mL/min/1.73m2 | Serum Potassium 4.2 mEq/L. [Graph Audit: Conditional resumption criterion (Cr <1.2 mg/dL) met; zero resumption order for Empagliflozin 10 mg documented].',
       source_page: 1,
     },
@@ -144,8 +144,8 @@ export function HeroClinicalProof() {
   const evidence = Array.isArray(selectedClaim.evidence)
     ? selectedClaim.evidence[0]
     : selectedClaim.evidence
-  const sourceRecord = evidence?.source_doc_id
-    ? RK_CLINICAL_RECORDS.find((r) => r.id === evidence.source_doc_id)
+  const sourceRecord = evidence?.source_record_id
+    ? RK_CLINICAL_RECORDS.find((r) => r.id === evidence.source_record_id)
     : undefined
 
   const handleSelectClaim = (id: string) => {
@@ -413,7 +413,7 @@ export function HeroClinicalProof() {
                       {sourceRecord.filename}
                     </p>
                     <p className="font-mono text-[10px] text-slate-400">
-                      {sourceRecord.document_type} · {sourceRecord.document_date}
+                      {sourceRecord.record_type} · {sourceRecord.record_date}
                     </p>
                   </div>
                   {evidence?.source_page && (
@@ -447,7 +447,7 @@ export function HeroClinicalProof() {
                       {sourceRecord.filename}
                     </p>
                     <p className="font-mono text-[10px] text-slate-400">
-                      {sourceRecord.document_type} · {sourceRecord.document_date}
+                      {sourceRecord.record_type} · {sourceRecord.record_date}
                     </p>
                   </div>
                   {evidence?.source_page && (
@@ -481,7 +481,7 @@ export function HeroClinicalProof() {
                       {sourceRecord.filename}
                     </p>
                     <p className="font-mono text-[10px] text-slate-400">
-                      {sourceRecord.document_type} · {sourceRecord.document_date}
+                      {sourceRecord.record_type} · {sourceRecord.record_date}
                     </p>
                   </div>
                   {evidence?.source_page && (

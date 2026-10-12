@@ -101,7 +101,7 @@ Clinical Narrative Structure:
 PaperTrail Citation Requirement:
 - Embed inline claim markers like [claim:c1], [claim:c2] immediately after each factual assertion, lab value, medication dose, or concern.
 - Write individual claim tokens (e.g., [claim:c1][claim:c2]). Do NOT bundle multiple claim IDs inside a single comma-separated bracket.
-- In each claim's evidence array, cite EVERY source clinical record and page that supports the claim (extract source_doc_id from [doc_id: <uuid>] and source_page from [page: <number>] found inside <CHRONOLOGICAL_EVIDENCE>). For longitudinal trends spanning multiple dates/visits, include an evidence entry for each supporting record across time.`
+- In each claim's evidence array, cite EVERY source clinical record and page that supports the claim (extract source_record_id from [record_id: <uuid>] or [doc_id: <uuid>] and source_page from [page: <number>] found inside <CHRONOLOGICAL_EVIDENCE>). For longitudinal trends spanning multiple dates/visits, include an evidence entry for each supporting record across time.`
 
     const result = streamObject({
       model,
