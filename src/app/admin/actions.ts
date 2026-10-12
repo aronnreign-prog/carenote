@@ -2,14 +2,14 @@
 
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
-import { caregivers, demoRequests, patients, documents } from '@/lib/db/schema'
+import { workspaces, demoRequests, patients, clinicalRecords } from '@/lib/db/schema'
 import { eq } from 'drizzle-orm'
 import { headers } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { getSession, isAdmin } from '@/lib/auth-session'
 import { randomBytes } from 'crypto'
 import { del } from '@vercel/blob'
-import { deletePatientMemory } from '@/lib/zep/ingest'
+import { purgePatientGraphMemory } from '@/lib/zep/ingest'
 
 /**
  * Official Better Auth Admin Plugin User Creation
@@ -49,15 +49,15 @@ export async function createDemoUser(formData: FormData) {
       return { error: 'Failed to create user in authentication system.' }
     }
 
-    // Ensure caregiver profile exists in Neon for CareNote workspaces
-    const existingCaregiver = await db
-      .select({ id: caregivers.id })
-      .from(caregivers)
-      .where(eq(caregivers.user_id, result.user.id))
+    // Ensure clinical workspace profile exists in Neon
+    const existingWorkspace = await db
+      .select({ id: workspaces.id })
+      .from(workspaces)
+      .where(eq(workspaces.user_id, result.user.id))
       .limit(1)
 
-    if (existingCaregiver.length === 0) {
-      await db.insert(caregivers).values({
+    if (existingWorkspace.length === 0) {
+      await db.insert(workspaces).values({
         user_id: result.user.id,
         email: result.user.email,
         name: name,
@@ -88,39 +88,39 @@ export async function deleteDemoUser(userId: string) {
   }
 
   try {
-    // 1. Fetch caregiver record for this user
-    const [caregiver] = await db
+    // 1. Fetch workspace record for this user
+    const [workspace] = await db
       .select()
-      .from(caregivers)
-      .where(eq(caregivers.user_id, userId))
+      .from(workspaces)
+      .where(eq(workspaces.user_id, userId))
       .limit(1)
 
-    if (caregiver) {
-      // 2. Fetch all patients for this caregiver
-      const caregiverPatients = await db
+    if (workspace) {
+      // 2. Fetch all patients for this workspace
+      const workspacePatients = await db
         .select({ id: patients.id })
         .from(patients)
-        .where(eq(patients.caregiver_id, caregiver.id))
+        .where(eq(patients.workspace_id, workspace.id))
 
       // 3. Clean up external resources for each patient (Blobs and Zep graphs)
-      for (const p of caregiverPatients) {
-        const patientDocs = await db
-          .select({ blob_url: documents.blob_url })
-          .from(documents)
-          .where(eq(documents.patient_id, p.id))
+      for (const p of workspacePatients) {
+        const patientRecords = await db
+          .select({ blob_url: clinicalRecords.blob_url })
+          .from(clinicalRecords)
+          .where(eq(clinicalRecords.patient_id, p.id))
 
-        const blobUrls = patientDocs.map((d) => d.blob_url).filter(Boolean) as string[]
+        const blobUrls = patientRecords.map((r) => r.blob_url).filter(Boolean) as string[]
         if (blobUrls.length > 0) {
           await del(blobUrls).catch((err) => console.warn('[Blob] Cleanup error on admin user delete:', err))
         }
 
-        await deletePatientMemory(caregiver.id, p.id).catch((err) =>
+        await purgePatientGraphMemory(workspace.id, p.id).catch((err) =>
           console.warn('[Zep] Memory cleanup error on admin user delete:', err)
         )
       }
 
-      // 4. Delete caregiver record (which cascades to patients, documents, briefings in DB)
-      await db.delete(caregivers).where(eq(caregivers.id, caregiver.id))
+      // 4. Delete workspace record (which cascades to patients, clinical records, syntheses in DB)
+      await db.delete(workspaces).where(eq(workspaces.id, workspace.id))
     }
 
     // 5. Official Better Auth Admin API: removeUser
@@ -193,7 +193,7 @@ function generateCleanTempPassword(): string {
 }
 
 /**
- * Approve a demo request, create Better Auth user, link caregiver record, and update status.
+ * Approve a demo request, create Better Auth user, link workspace record, and update status.
  */
 export async function approveDemoRequest(requestId: string) {
   const authorized = await isAdmin()
@@ -237,15 +237,15 @@ export async function approveDemoRequest(requestId: string) {
       return { error: 'Failed to create user in authentication system.' }
     }
 
-    // Insert linked caregivers record in Neon
-    const existingCaregiver = await db
-      .select({ id: caregivers.id })
-      .from(caregivers)
-      .where(eq(caregivers.user_id, result.user.id))
+    // Insert linked workspace record in Neon
+    const existingWorkspace = await db
+      .select({ id: workspaces.id })
+      .from(workspaces)
+      .where(eq(workspaces.user_id, result.user.id))
       .limit(1)
 
-    if (existingCaregiver.length === 0) {
-      await db.insert(caregivers).values({
+    if (existingWorkspace.length === 0) {
+      await db.insert(workspaces).values({
         user_id: result.user.id,
         email: result.user.email,
         name: req.name,

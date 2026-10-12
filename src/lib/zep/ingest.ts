@@ -1,6 +1,6 @@
 /**
  * src/lib/zep/ingest.ts
- * Ingest extracted clinical facts into Zep Cloud with bi-temporal valid_from dates.
+ * Index extracted clinical facts into Zep Cloud with bi-temporal valid_from dates.
  * Uses Zep Cloud V3 graph API: client.graph.add / client.graph.search
  */
 
@@ -17,13 +17,13 @@ function getZepClient(): ZepClient {
   return _client
 }
 
-// In Zep Cloud V3, facts are scoped to a userId (caregiver + patient composite)
-// We use a deterministic userId per patient so all their documents accumulate in one graph
-function zepUserId(caregiverId: string, patientId: string): string {
-  return 'caregiver-' + caregiverId + '-patient-' + patientId
+// In Zep Cloud V3, facts are scoped to a userId (workspace + patient composite)
+// We use a deterministic userId per patient so all their clinical records accumulate in one graph
+function zepUserId(workspaceId: string, patientId: string): string {
+  return 'workspace-' + workspaceId + '-patient-' + patientId
 }
 
-function escapeXmlContent(text: string): string {
+export function escapeXmlContent(text: string): string {
   return text
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -39,18 +39,18 @@ async function ensureZepUser(userId: string): Promise<void> {
   }
 }
 
-function buildFactSummary(
+export function serializeEncounterToGraphEpisode(
   extraction: ClinicalExtraction,
-  documentId: string,
+  recordId: string,
   filename: string,
 ): string {
-  const docDate = extraction.documentDate ?? 'Date unknown / not documented'
+  const encounterDate = extraction.documentDate ?? 'Date unknown / not documented'
   const lines: string[] = []
 
-  // ── Document context header ───────────────────────────────────────────────
-  lines.push(`CLINICAL DOCUMENT: ${filename} (document_id: ${documentId})`)
-  lines.push(`Document type: ${extraction.documentType ?? 'Unspecified'}`)
-  lines.push(`Document date: ${docDate}`)
+  // ── Encounter context header ──────────────────────────────────────────────
+  lines.push(`CLINICAL ENCOUNTER RECORD: ${filename} (document_id: ${recordId})`)
+  lines.push(`Record type: ${extraction.documentType ?? 'Unspecified'}`)
+  lines.push(`Encounter date: ${encounterDate}`)
   if (extraction.provider) lines.push(`Provider: ${extraction.provider}`)
   if (extraction.specialty) lines.push(`Specialty: ${extraction.specialty}`)
   if (extraction.encounterContext) lines.push(`Encounter context: ${extraction.encounterContext}`)
@@ -64,7 +64,7 @@ function buildFactSummary(
       const range = lab.referenceRange ? ` (ref: ${lab.referenceRange})` : ''
       const flag = lab.flag ? ` [${lab.flag}]` : ''
       const page = lab.pageNumber ? ` [page: ${lab.pageNumber}]` : ''
-      lines.push(`  ${onDate}, ${lab.name} was ${val}${range}${flag}.${page} [doc_id: ${documentId}]`)
+      lines.push(`  ${onDate}, ${lab.name} was ${val}${range}${flag}.${page} [doc_id: ${recordId}]`)
     }
   }
 
@@ -78,7 +78,7 @@ function buildFactSummary(
       if (med.frequency) parts.push(med.frequency)
       if (med.route) parts.push(`(${med.route})`)
       const page = med.pageNumber ? ` [page: ${med.pageNumber}]` : ''
-      lines.push(`  ${onDate}, ${parts.join(' ')} documented as ${med.status}.${page} [doc_id: ${documentId}]`)
+      lines.push(`  ${onDate}, ${parts.join(' ')} documented as ${med.status}.${page} [doc_id: ${recordId}]`)
     }
   }
 
@@ -89,7 +89,7 @@ function buildFactSummary(
       const onDate = cond.onsetDate ? `As of ${cond.onsetDate}` : (extraction.documentDate ? `As of ${extraction.documentDate}` : 'Date unknown')
       const status = cond.status ? ` (${cond.status})` : ''
       const page = cond.pageNumber ? ` [page: ${cond.pageNumber}]` : ''
-      lines.push(`  ${onDate}, ${cond.name}${status}.${page} [doc_id: ${documentId}]`)
+      lines.push(`  ${onDate}, ${cond.name}${status}.${page} [doc_id: ${recordId}]`)
     }
   }
 
@@ -97,63 +97,62 @@ function buildFactSummary(
   if (extraction.otherObservations.length > 0) {
     lines.push('\nCLINICAL NOTES:')
     for (const obs of extraction.otherObservations) {
-      lines.push(`  ${obs} [doc_id: ${documentId}]`)
+      lines.push(`  ${obs} [doc_id: ${recordId}]`)
     }
   }
 
   // ── Source provenance ─────────────────────────────────────────────────────
-  lines.push(`\nSOURCE: ${filename} (document_id: ${documentId})`)
+  lines.push(`\nSOURCE: ${filename} (document_id: ${recordId})`)
 
   return lines.join('\n')
 }
 
-
-function chunkDocumentEpisodes(
+export function segmentClinicalEpisodes(
   fullContent: string,
-  contextHeader: string,
-  maxChunkSize = 7500,
+  continuationHeader: string,
+  maxSegmentLength = 7500,
 ): string[] {
-  if (fullContent.length <= maxChunkSize) {
+  if (fullContent.length <= maxSegmentLength) {
     return [fullContent]
   }
 
   const paragraphs = fullContent.split(/\n\n+/).filter((p) => p.trim().length > 0)
-  const chunks: string[] = []
-  let currentChunk: string[] = []
+  const episodeSegments: string[] = []
+  let currentSegment: string[] = []
   let currentLength = 0
 
   for (const paragraph of paragraphs) {
-    if (paragraph.length > maxChunkSize) {
-      // Split large paragraph by lines
+    if (paragraph.length > maxSegmentLength) {
+      // Split oversized paragraph along line boundaries
       const lines = paragraph.split('\n')
       for (const line of lines) {
-        if (currentLength + line.length + 1 > maxChunkSize && currentChunk.length > 0) {
-          const body = currentChunk.join('\n')
-          chunks.push(chunks.length === 0 ? body : `${contextHeader}\n\n${body}`)
-          currentChunk = []
+        if (currentLength + line.length + 1 > maxSegmentLength && currentSegment.length > 0) {
+          const body = currentSegment.join('\n')
+          episodeSegments.push(episodeSegments.length === 0 ? body : `${continuationHeader}\n\n${body}`)
+          currentSegment = []
           currentLength = 0
         }
-        currentChunk.push(line)
+        currentSegment.push(line)
         currentLength += line.length + 1
       }
     } else {
-      if (currentLength + paragraph.length + 2 > maxChunkSize && currentChunk.length > 0) {
-        const body = currentChunk.join('\n\n')
-        chunks.push(chunks.length === 0 ? body : `${contextHeader}\n\n${body}`)
-        currentChunk = []
+      if (currentLength + paragraph.length + 2 > maxSegmentLength && currentSegment.length > 0) {
+        const body = currentSegment.join('\n\n')
+        episodeSegments.push(episodeSegments.length === 0 ? body : `${continuationHeader}\n\n${body}`)
+        currentSegment = []
         currentLength = 0
       }
-      currentChunk.push(paragraph)
+      currentSegment.push(paragraph)
       currentLength += paragraph.length + 2
     }
   }
 
-  if (currentChunk.length > 0) {
-    const body = currentChunk.join('\n\n')
-    chunks.push(chunks.length === 0 ? body : `${contextHeader}\n\n${body}`)
+  if (currentSegment.length > 0) {
+    const body = currentSegment.join('\n\n')
+    episodeSegments.push(episodeSegments.length === 0 ? body : `${continuationHeader}\n\n${body}`)
   }
 
-  return chunks
+  return episodeSegments
 }
 
 export interface IngestResult {
@@ -161,25 +160,25 @@ export interface IngestResult {
   error?: string
 }
 
-export async function ingestDocumentFacts(
-  caregiverId: string,
+export async function indexClinicalRecordFacts(
+  workspaceId: string,
   patientId: string,
-  documentId: string,
+  recordId: string,
   filename: string,
   extraction: ClinicalExtraction,
 ): Promise<IngestResult> {
   try {
     const client = getZepClient()
-    const userId = zepUserId(caregiverId, patientId)
+    const userId = zepUserId(workspaceId, patientId)
     await ensureZepUser(userId)
 
-    const content = buildFactSummary(extraction, documentId, filename)
-    const docDate = extraction.documentDate ?? 'Date unknown / not documented'
-    const contextHeader = `CLINICAL DOCUMENT (CONTINUATION): ${filename} (document_id: ${documentId}) | Date: ${docDate}`
+    const episodeContent = serializeEncounterToGraphEpisode(extraction, recordId, filename)
+    const encounterDate = extraction.documentDate ?? 'Date unknown / not documented'
+    const continuationHeader = `CLINICAL ENCOUNTER RECORD (CONTINUATION): ${filename} (document_id: ${recordId}) | Date: ${encounterDate}`
 
-    const chunks = chunkDocumentEpisodes(content, contextHeader, 7500)
+    const episodeSegments = segmentClinicalEpisodes(episodeContent, continuationHeader, 7500)
 
-    // Only supply created_at if an authentic, verified document date exists in ISO format.
+    // Only supply created_at if an authentic, verified encounter date exists in ISO format.
     // If undated/missing, do NOT pass created_at or today's timestamp so it remains strictly undated.
     let createdAt: string | undefined = undefined
     if (extraction.documentDate && /^\d{4}-\d{2}-\d{2}/.test(extraction.documentDate)) {
@@ -189,15 +188,15 @@ export async function ingestDocumentFacts(
       }
     }
 
-    // Ingest each chunk sharing the same documentId and createdAt per Zep documentation
-    for (const chunk of chunks) {
+    // Index each episode segment sharing the same recordId and createdAt per Zep documentation
+    for (const segment of episodeSegments) {
       await client.graph.add(
         {
-          data: chunk,
+          data: segment,
           type: 'text',
           userId,
           createdAt,
-          metadata: { documentId },
+          metadata: { documentId: recordId },
         },
         { timeoutInSeconds: 30 }
       )
@@ -206,19 +205,19 @@ export async function ingestDocumentFacts(
     return { success: true }
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
-    console.error('[Zep] Ingest failed:', message)
+    console.error('[Zep] Graph indexing failed:', message)
     return { success: false, error: message }
   }
 }
 
 export async function queryPatientMemory(
-  caregiverId: string,
+  workspaceId: string,
   patientId: string,
   query: string,
 ): Promise<string> {
   try {
     const client = getZepClient()
-    const userId = zepUserId(caregiverId, patientId)
+    const userId = zepUserId(workspaceId, patientId)
 
     // Ensure user exists before querying
     await ensureZepUser(userId)
@@ -327,16 +326,16 @@ export async function queryPatientMemory(
   }
 }
 
-export async function deleteDocumentMemory(caregiverId: string, patientId: string, documentId: string): Promise<void> {
+export async function pruneRecordFromGraph(workspaceId: string, patientId: string, recordId: string): Promise<void> {
   try {
     const client = getZepClient()
-    const userId = zepUserId(caregiverId, patientId)
+    const userId = zepUserId(workspaceId, patientId)
     const response = await client.graph.episode.getByUserId(userId, { lastn: 100 }, { timeoutInSeconds: 15 })
 
     if (response?.episodes && Array.isArray(response.episodes)) {
       const matchingEpisodes = response.episodes.filter((ep) => {
-        const matchesMeta = ep.metadata && (ep.metadata as Record<string, unknown>).documentId === documentId
-        const matchesContent = ep.content && (ep.content.includes(`document_id: ${documentId}`) || ep.content.includes(`[doc_id: ${documentId}]`))
+        const matchesMeta = ep.metadata && (ep.metadata as Record<string, unknown>).documentId === recordId
+        const matchesContent = ep.content && (ep.content.includes(`document_id: ${recordId}`) || ep.content.includes(`[doc_id: ${recordId}]`))
         return Boolean(matchesMeta || matchesContent)
       })
 
@@ -347,20 +346,20 @@ export async function deleteDocumentMemory(caregiverId: string, patientId: strin
           })
         }
       }
-      console.log(`[Zep] Successfully pruned ${matchingEpisodes.length} episodes for document:`, documentId)
+      console.log(`[Zep] Successfully pruned ${matchingEpisodes.length} episodes for clinical record:`, recordId)
     }
   } catch (err) {
-    console.warn(`[Zep] Could not prune document episodes for ${documentId}:`, err)
+    console.warn(`[Zep] Could not prune clinical record episodes for ${recordId}:`, err)
   }
 }
 
-export async function deletePatientMemory(caregiverId: string, patientId: string): Promise<void> {
+export async function purgePatientGraphMemory(workspaceId: string, patientId: string): Promise<void> {
   try {
     const client = getZepClient()
-    const userId = zepUserId(caregiverId, patientId)
+    const userId = zepUserId(workspaceId, patientId)
     await client.user.delete(userId, { timeoutInSeconds: 15 })
-    console.log('[Zep] Successfully deleted patient memory graph for user:', userId)
+    console.log('[Zep] Successfully purged patient memory graph for user:', userId)
   } catch (err) {
-    console.warn('[Zep] Could not delete patient memory graph:', err)
+    console.warn('[Zep] Could not purge patient memory graph:', err)
   }
 }

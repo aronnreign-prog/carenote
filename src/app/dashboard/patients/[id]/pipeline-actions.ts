@@ -1,16 +1,16 @@
 'use server'
 
 import { db } from '@/lib/db'
-import { documents, briefings, patients } from '@/lib/db/schema'
+import { clinicalRecords, clinicalSyntheses, patients } from '@/lib/db/schema'
 import { eq, and } from 'drizzle-orm'
 import { extractClinicalFacts } from '@/lib/ai/extract'
-import { ingestDocumentFacts, queryPatientMemory } from '@/lib/zep/ingest'
+import { indexClinicalRecordFacts, queryPatientMemory } from '@/lib/zep/ingest'
 import { getClinicalModel } from '@/lib/ai/model'
-import { BriefingOutputSchema, ClinicalQueryOutputSchema } from '@/lib/ai/schemas'
+import { ClinicalSynthesisSchema, ClinicalQueryOutputSchema } from '@/lib/ai/schemas'
 import { generateObject } from 'ai'
 import { z } from 'zod'
 import { revalidatePath } from 'next/cache'
-import { getCaregiver } from '@/lib/auth-session'
+import { getWorkspace } from '@/lib/auth-session'
 
 function isValidVercelBlobUrl(url: string): boolean {
   try {
@@ -25,88 +25,94 @@ function isValidVercelBlobUrl(url: string): boolean {
   }
 }
 
-export async function createDocumentRecord(patientId: string, filename: string, blobUrl: string, fileSize: number, mimeType: string): Promise<{ id?: string; error?: string }> {
-  const caregiver = await getCaregiver()
-  if (!caregiver) return { error: 'Unauthorized' }
+export async function createClinicalRecord(
+  patientId: string,
+  filename: string,
+  blobUrl: string,
+  fileSize: number,
+  mimeType: string,
+): Promise<{ id?: string; error?: string }> {
+  const workspace = await getWorkspace()
+  if (!workspace) return { error: 'Unauthorized' }
 
   const [patient] = await db
     .select()
     .from(patients)
-    .where(and(eq(patients.id, patientId), eq(patients.caregiver_id, caregiver.id)))
+    .where(and(eq(patients.id, patientId), eq(patients.workspace_id, workspace.id)))
     .limit(1)
   if (!patient) return { error: 'Patient not found or unauthorized' }
-  
+
   if (!isValidVercelBlobUrl(blobUrl)) {
-    return { error: 'Invalid document storage URL origin.' }
+    return { error: 'Invalid clinical record storage URL origin.' }
   }
 
   try {
-    const [inserted] = await db.insert(documents).values({
+    const [inserted] = await db.insert(clinicalRecords).values({
       patient_id: patientId,
-      caregiver_id: caregiver.id,
+      workspace_id: workspace.id,
       filename,
       blob_url: blobUrl,
       file_size: String(fileSize),
       mime_type: mimeType,
       status: 'uploaded',
-    }).returning({ id: documents.id })
+    }).returning({ id: clinicalRecords.id })
     return { id: inserted.id }
   } catch (err) {
     return { error: err instanceof Error ? err.message : 'DB insert failed' }
   }
 }
 
-export async function ingestDocument(documentId: string): Promise<{ error?: string }> {
-  const caregiver = await getCaregiver()
-  if (!caregiver) return { error: 'Unauthorized' }
+export async function indexClinicalRecord(recordId: string): Promise<{ error?: string }> {
+  const workspace = await getWorkspace()
+  if (!workspace) return { error: 'Unauthorized' }
 
-  const [doc] = await db
+  const [record] = await db
     .select()
-    .from(documents)
-    .where(and(eq(documents.id, documentId), eq(documents.caregiver_id, caregiver.id)))
+    .from(clinicalRecords)
+    .where(and(eq(clinicalRecords.id, recordId), eq(clinicalRecords.workspace_id, workspace.id)))
     .limit(1)
-  if (!doc) return { error: 'Document not found or unauthorized' }
-  if (!doc.blob_url) return { error: 'Document has no blob URL' }
+  if (!record) return { error: 'Clinical record not found or unauthorized' }
+  if (!record.blob_url) return { error: 'Clinical record has no storage URL' }
 
-  if (!isValidVercelBlobUrl(doc.blob_url)) {
-    return { error: 'Untrusted document storage URL.' }
+  if (!isValidVercelBlobUrl(record.blob_url)) {
+    return { error: 'Untrusted clinical record storage URL.' }
   }
 
   await db
-    .update(documents)
+    .update(clinicalRecords)
     .set({ status: 'extracting' })
-    .where(and(eq(documents.id, documentId), eq(documents.caregiver_id, caregiver.id)))
+    .where(and(eq(clinicalRecords.id, recordId), eq(clinicalRecords.workspace_id, workspace.id)))
 
   try {
-    const response = await fetch(doc.blob_url)
-    if (!response.ok) throw new Error(`Failed to download blob: ${response.status}`)
+    const response = await fetch(record.blob_url)
+    if (!response.ok) throw new Error(`Failed to download clinical record blob: ${response.status}`)
     const arrayBuffer = await response.arrayBuffer()
     const pdfBuffer = Buffer.from(arrayBuffer)
 
-    const extraction = await extractClinicalFacts(pdfBuffer, doc.filename)
+    const extraction = await extractClinicalFacts(pdfBuffer, record.filename)
 
-    const ingestResult = await ingestDocumentFacts(
-      caregiver.id,
-      doc.patient_id,
-      doc.id,
-      doc.filename,
+    const indexResult = await indexClinicalRecordFacts(
+      workspace.id,
+      record.patient_id,
+      record.id,
+      record.filename,
       extraction,
     )
-    if (!ingestResult.success) console.error('[Pipeline] Zep ingest failed:', ingestResult.error)
+    if (!indexResult.success) console.error('[Pipeline] Zep graph indexing failed:', indexResult.error)
 
-    await db.update(documents).set({
+    await db.update(clinicalRecords).set({
       status: 'extracted',
       document_date: extraction.documentDate ?? null,
       document_type: extraction.documentType ?? null,
       processed_at: new Date(),
-    }).where(and(eq(documents.id, documentId), eq(documents.caregiver_id, caregiver.id)))
+    }).where(and(eq(clinicalRecords.id, recordId), eq(clinicalRecords.workspace_id, workspace.id)))
 
-    revalidatePath('/dashboard/patients/' + doc.patient_id)
+    revalidatePath('/dashboard/patients/' + record.patient_id)
     return {}
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
     console.error('[Pipeline] Extraction failed:', message)
-    await db.update(documents).set({ status: 'failed', error_message: message }).where(and(eq(documents.id, documentId), eq(documents.caregiver_id, caregiver.id)))
+    await db.update(clinicalRecords).set({ status: 'failed', error_message: message }).where(and(eq(clinicalRecords.id, recordId), eq(clinicalRecords.workspace_id, workspace.id)))
     return { error: message }
   }
 }
@@ -117,103 +123,98 @@ export type ClinicalQueryResult = {
   error?: string
 }
 
-export type BriefingAudience = 'specialist' | 'general'
-
-function buildZepQuery(): string {
+function buildClinicalSynthesisQuery(): string {
   return 'comprehensive longitudinal clinical trajectory medications diagnoses lab results vitals and safety flags'
 }
 
-export async function createBriefingRecord(
+export async function createSynthesisRecord(
   patientId: string,
-  audience: string = 'specialist',
-  sourceDocIds: string[] = [],
+  sourceRecordIds: string[] = [],
 ): Promise<{ id?: string; error?: string }> {
-  const caregiver = await getCaregiver()
-  if (!caregiver) return { error: 'Unauthorized' }
+  const workspace = await getWorkspace()
+  if (!workspace) return { error: 'Unauthorized' }
 
   const [patient] = await db
     .select()
     .from(patients)
-    .where(and(eq(patients.id, patientId), eq(patients.caregiver_id, caregiver.id)))
+    .where(and(eq(patients.id, patientId), eq(patients.workspace_id, workspace.id)))
     .limit(1)
   if (!patient) return { error: 'Patient not found or unauthorized' }
 
   try {
-    const [inserted] = await db.insert(briefings).values({
+    const [inserted] = await db.insert(clinicalSyntheses).values({
       patient_id: patientId,
-      caregiver_id: caregiver.id,
-      audience,
+      workspace_id: workspace.id,
       status: 'queued',
-      source_doc_ids: sourceDocIds,
-    }).returning({ id: briefings.id })
+      source_doc_ids: sourceRecordIds,
+    }).returning({ id: clinicalSyntheses.id })
     return { id: inserted.id }
   } catch (err) {
-    return { error: err instanceof Error ? err.message : 'Failed to create briefing' }
+    return { error: err instanceof Error ? err.message : 'Failed to initialize clinical synthesis' }
   }
 }
 
-export async function generateBriefing(
+export async function synthesizePatientGraph(
   patientId: string,
-  briefingId: string,
-  audience: string = 'specialist',
+  synthesisId: string,
 ): Promise<{ error?: string }> {
-  const caregiver = await getCaregiver()
-  if (!caregiver) return { error: 'Unauthorized' }
+  const workspace = await getWorkspace()
+  if (!workspace) return { error: 'Unauthorized' }
 
   const [patient] = await db
     .select()
     .from(patients)
-    .where(and(eq(patients.id, patientId), eq(patients.caregiver_id, caregiver.id)))
+    .where(and(eq(patients.id, patientId), eq(patients.workspace_id, workspace.id)))
     .limit(1)
   if (!patient) {
     return { error: 'Unauthorized or patient not found' }
   }
 
-  const [briefing] = await db
+  const [synthesis] = await db
     .select()
-    .from(briefings)
+    .from(clinicalSyntheses)
     .where(
       and(
-        eq(briefings.id, briefingId),
-        eq(briefings.patient_id, patientId),
-        eq(briefings.caregiver_id, caregiver.id)
+        eq(clinicalSyntheses.id, synthesisId),
+        eq(clinicalSyntheses.patient_id, patientId),
+        eq(clinicalSyntheses.workspace_id, workspace.id)
       )
     )
     .limit(1)
-  if (!briefing) return { error: 'Briefing not found or unauthorized' }
+  if (!synthesis) return { error: 'Clinical synthesis not found or unauthorized' }
 
   await db
-    .update(briefings)
+    .update(clinicalSyntheses)
     .set({ status: 'processing' })
     .where(
       and(
-        eq(briefings.id, briefingId),
-        eq(briefings.patient_id, patientId),
-        eq(briefings.caregiver_id, caregiver.id)
+        eq(clinicalSyntheses.id, synthesisId),
+        eq(clinicalSyntheses.patient_id, patientId),
+        eq(clinicalSyntheses.workspace_id, workspace.id)
       )
     )
 
   try {
     // 1. Query Zep with clinical intent query - the single source of truth for clinical memory
-    const zepQuery = buildZepQuery()
-    const context = await queryPatientMemory(caregiver.id, patientId, zepQuery)
+    const zepQuery = buildClinicalSynthesisQuery()
+    const context = await queryPatientMemory(workspace.id, patientId, zepQuery)
 
     // 2. If memory is empty, fail with a clear message
     if (!context || context.trim().length === 0) {
-      await db.update(briefings).set({
+      await db.update(clinicalSyntheses).set({
         status: 'failed',
-        error_message: 'No clinical facts found in graph memory. Please ensure documents are extracted.',
+        error_message: 'No clinical facts found in temporal graph memory. Please ensure clinical records are indexed.',
       }).where(
         and(
-          eq(briefings.id, briefingId),
-          eq(briefings.patient_id, patientId),
-          eq(briefings.caregiver_id, caregiver.id)
+          eq(clinicalSyntheses.id, synthesisId),
+          eq(clinicalSyntheses.patient_id, patientId),
+          eq(clinicalSyntheses.workspace_id, workspace.id)
         )
       )
       return { error: 'Clinical memory unavailable.' }
     }
 
-    const patientHeader = `Patient: ${patient.name}, DOB: ${patient.date_of_birth}, Relationship: ${patient.relationship}`
+    const patientHeader = `Patient: ${patient.name}, DOB: ${patient.date_of_birth}, Biological Sex: ${patient.biological_sex}`
 
     const model = getClinicalModel()
 
@@ -225,7 +226,7 @@ export async function generateBriefing(
     // -----------------------------------------------------------------------
 
     const SYSTEM_PROMPT = `You are CareNote's clinical intelligence engine synthesizing an evolving longitudinal patient graph across time.
-Your purpose is to construct a rigorous longitudinal clinical briefing from the patient's temporal memory graph.
+Your purpose is to construct a rigorous Longitudinal Clinical Synthesis from the patient's temporal memory graph.
 Medical history is an evolving graph over time, not disconnected text chunks. Trace how diagnoses evolved, dose adjustments occurred, lab trajectories shifted across providers, and whether past therapies were superseded or invalidated.
 Write for a medical specialist: emphasize longitudinal trajectories, exact medication dosages, cross-doctor conflicts, clinical reasoning, and notable clinical absences.
 
@@ -246,32 +247,32 @@ Clinical Narrative Structure:
 PaperTrail Citation Requirement:
 - Embed inline claim markers like [claim:c1], [claim:c2] immediately after each factual assertion, lab value, medication dose, or concern.
 - Write individual claim tokens (e.g., [claim:c1][claim:c2]). Do NOT bundle multiple claim IDs inside a single comma-separated bracket.
-- In each claim's evidence array, cite EVERY source document and page that supports the claim (extract source_doc_id from [doc_id: <uuid>] and source_page from [page: <number>] found inside <CHRONOLOGICAL_EVIDENCE>). For longitudinal trends spanning multiple dates/visits, include an evidence entry for each supporting document across time.`
+- In each claim's evidence array, cite EVERY source clinical record and page that supports the claim (extract source_doc_id from [doc_id: <uuid>] and source_page from [page: <number>] found inside <CHRONOLOGICAL_EVIDENCE>). For longitudinal trends spanning multiple dates/visits, include an evidence entry for each supporting record across time.`
 
     const { object } = await generateObject({
       model,
       system: SYSTEM_PROMPT,
       messages: [{
         role: 'user',
-        content: `${patientHeader}\n\nExtracted clinical facts:\n\n${context}\n\nGenerate a comprehensive specialist briefing with inline [claim:cN] citations.`,
+        content: `${patientHeader}\n\nExtracted clinical facts:\n\n${context}\n\nSynthesize a comprehensive longitudinal clinical synthesis with inline [claim:cN] citations.`,
       }],
-      schema: BriefingOutputSchema,
+      schema: ClinicalSynthesisSchema,
       abortSignal: AbortSignal.timeout(120000),
     })
 
-    const cleanedBriefingText = object.briefing_text.replace(/^[0-9]+\s+/, '').trim()
+    const cleanedSynthesisText = object.synthesis_text.replace(/^[0-9]+\s+/, '').trim()
 
-    await db.update(briefings).set({
+    await db.update(clinicalSyntheses).set({
       status: 'complete',
-      briefing_text: cleanedBriefingText,
+      synthesis_text: cleanedSynthesisText,
       claims: object.claims,
       flagged_concerns: object.flagged_concerns,
       completed_at: new Date(),
     }).where(
       and(
-        eq(briefings.id, briefingId),
-        eq(briefings.patient_id, patientId),
-        eq(briefings.caregiver_id, caregiver.id)
+        eq(clinicalSyntheses.id, synthesisId),
+        eq(clinicalSyntheses.patient_id, patientId),
+        eq(clinicalSyntheses.workspace_id, workspace.id)
       )
     )
 
@@ -279,12 +280,12 @@ PaperTrail Citation Requirement:
     return {}
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
-    console.error('[Briefing] Generation failed:', message)
-    await db.update(briefings).set({ status: 'failed', error_message: message }).where(
+    console.error('[Synthesis] Generation failed:', message)
+    await db.update(clinicalSyntheses).set({ status: 'failed', error_message: message }).where(
       and(
-        eq(briefings.id, briefingId),
-        eq(briefings.patient_id, patientId),
-        eq(briefings.caregiver_id, caregiver.id)
+        eq(clinicalSyntheses.id, synthesisId),
+        eq(clinicalSyntheses.patient_id, patientId),
+        eq(clinicalSyntheses.workspace_id, workspace.id)
       )
     )
     return { error: message }
@@ -296,13 +297,13 @@ export async function askPatientClinicalQuery(
   question: string,
   previousTurn?: { question: string; answer: string },
 ): Promise<ClinicalQueryResult> {
-  const caregiver = await getCaregiver()
-  if (!caregiver) return { error: 'Unauthorized' }
+  const workspace = await getWorkspace()
+  if (!workspace) return { error: 'Unauthorized' }
 
   const [patient] = await db
     .select()
     .from(patients)
-    .where(and(eq(patients.id, patientId), eq(patients.caregiver_id, caregiver.id)))
+    .where(and(eq(patients.id, patientId), eq(patients.workspace_id, workspace.id)))
     .limit(1)
   if (!patient) return { error: 'Patient not found or unauthorized' }
 
@@ -315,38 +316,38 @@ export async function askPatientClinicalQuery(
       ? `${previousTurn.question} ${trimmedQuestion}`
       : trimmedQuestion
 
-    let context = await queryPatientMemory(caregiver.id, patientId, retrievalQuery)
+    let context = await queryPatientMemory(workspace.id, patientId, retrievalQuery)
 
-    // If Zep is empty, fallback to self-heal rebuild from PDF docs
+    // If Zep is empty, fallback to self-heal rebuild from indexed PDF records
     if (!context || context.trim().length === 0) {
       console.log('[Clinical Query] Zep memory empty: attempting rebuild from Blob PDFs...')
-      const patientDocs = await db
+      const patientRecords = await db
         .select()
-        .from(documents)
-        .where(and(eq(documents.patient_id, patientId), eq(documents.caregiver_id, caregiver.id), eq(documents.status, 'extracted')))
+        .from(clinicalRecords)
+        .where(and(eq(clinicalRecords.patient_id, patientId), eq(clinicalRecords.workspace_id, workspace.id), eq(clinicalRecords.status, 'extracted')))
 
-      for (const doc of patientDocs) {
-        if (doc.blob_url && isValidVercelBlobUrl(doc.blob_url)) {
+      for (const record of patientRecords) {
+        if (record.blob_url && isValidVercelBlobUrl(record.blob_url)) {
           try {
-            const res = await fetch(doc.blob_url)
+            const res = await fetch(record.blob_url)
             if (res.ok) {
               const buffer = Buffer.from(await res.arrayBuffer())
-              const extraction = await extractClinicalFacts(buffer, doc.filename)
-              await ingestDocumentFacts(caregiver.id, patientId, doc.id, doc.filename, extraction)
+              const extraction = await extractClinicalFacts(buffer, record.filename)
+              await indexClinicalRecordFacts(workspace.id, patientId, record.id, record.filename, extraction)
             }
           } catch (rebuildErr) {
-            console.warn('[Clinical Query Rebuild] Failed to reprocess doc:', doc.filename, rebuildErr)
+            console.warn('[Clinical Query Rebuild] Failed to re-index record:', record.filename, rebuildErr)
           }
         }
       }
-      context = await queryPatientMemory(caregiver.id, patientId, retrievalQuery)
+      context = await queryPatientMemory(workspace.id, patientId, retrievalQuery)
     }
 
     if (!context || context.trim().length === 0) {
       return { error: 'No clinical facts available in temporal memory. Please index at least one medical record first.' }
     }
 
-    const patientHeader = `Patient: ${patient.name}, DOB: ${patient.date_of_birth}, Relationship: ${patient.relationship}`
+    const patientHeader = `Patient: ${patient.name}, DOB: ${patient.date_of_birth}, Biological Sex: ${patient.biological_sex}`
     const model = getClinicalModel()
 
     const SYSTEM_PROMPT = `You are CareNote's clinical intelligence engine answering a longitudinal inquiry about patient ${patient.name} based on their temporal memory graph and clinical records timeline.
@@ -360,7 +361,7 @@ Guidelines:
 6. For each claim in the schema:
    - Mark flag: 'SUPPORTED', 'CONFLICTING', or 'MEDICAL_KNOWLEDGE'.
    - In the evidence array, extract source_doc_id from [doc_id: <uuid>] and source_page from [page: <number>].
-   - If citing multiple documents or chronological changes over time, include an evidence item for each supporting document across the timeline.`
+   - If citing multiple clinical records or chronological changes over time, include an evidence item for each supporting record across the timeline.`
 
     type MessageItem = { role: 'user' | 'assistant'; content: string }
     const messages: MessageItem[] = []

@@ -1,25 +1,23 @@
 import { handleUpload, type HandleUploadBody } from '@vercel/blob/client'
 import { NextResponse } from 'next/server'
-import { getCaregiver } from '@/lib/auth-session'
-import { headers } from 'next/headers'
+import { getWorkspace } from '@/lib/auth-session'
 
 export async function POST(request: Request): Promise<NextResponse> {
   const body = (await request.json()) as HandleUploadBody
-  const hdrs = await headers()
 
   try {
     const jsonResponse = await handleUpload({
       body,
       request,
       onBeforeGenerateToken: async () => {
-        const caregiver = await getCaregiver()
-        if (!caregiver) {
-          throw new Error('Unauthorized: You must be logged in to upload documents.')
+        const workspace = await getWorkspace()
+        if (!workspace) {
+          throw new Error('Unauthorized: You must be signed in to index clinical records.')
         }
         return {
           allowedContentTypes: ['application/pdf'],
           maximumSizeInBytes: 10 * 1024 * 1024,
-          tokenPayload: JSON.stringify({ caregiverId: caregiver.id }),
+          tokenPayload: JSON.stringify({ workspaceId: workspace.id }),
         }
       },
       onUploadCompleted: async () => {

@@ -1,33 +1,28 @@
 'use client'
 
-import type { Document } from '@/types/database'
+import type { ClinicalRecord } from '@/types/database'
 import { useRouter } from 'next/navigation'
 import { upload } from '@vercel/blob/client'
-import { ingestDocument, createDocumentRecord } from './pipeline-actions'
+import { indexClinicalRecord, createClinicalRecord } from './pipeline-actions'
 
 interface Props {
   patientId: string
-  isDemo: boolean
-  isGuest: boolean
-  uploading: boolean
+  indexing: boolean
   variant?: 'compact' | 'dropzone'
-  onUploadStart: (uploading: boolean) => void
-  onDocumentAdded: (doc: Document) => void
+  onIndexingChange: (indexing: boolean) => void
+  onRecordIndexed: (record: ClinicalRecord) => void
 }
 
-export default function DocumentUploader({
+export default function ClinicalRecordIndexer({
   patientId,
-  isDemo,
-  isGuest,
-  uploading,
+  indexing,
   variant = 'compact',
-  onUploadStart,
-  onDocumentAdded,
+  onIndexingChange,
+  onRecordIndexed,
 }: Props) {
   const router = useRouter()
 
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (isGuest) { alert('Sign in to index clinical records.'); return }
+  const handleIndexRecords = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || [])
     if (files.length === 0) return
 
@@ -38,9 +33,9 @@ export default function DocumentUploader({
     const oversized = pdfs.filter(f => f.size > 10 * 1024 * 1024)
     if (oversized.length > 0) { alert(`${oversized.length} file(s) exceed 10MB.`); return }
 
-    onUploadStart(true)
-    let ok = 0
-    let err = 0
+    onIndexingChange(true)
+    let indexedCount = 0
+    let failedCount = 0
 
     for (const file of pdfs) {
       try {
@@ -49,13 +44,13 @@ export default function DocumentUploader({
           handleUploadUrl: '/api/upload',
         })
 
-        const result = await createDocumentRecord(patientId, file.name, blob.url, file.size, file.type)
-        if (result.error || !result.id) throw new Error(result.error ?? 'No document ID')
+        const result = await createClinicalRecord(patientId, file.name, blob.url, file.size, file.type)
+        if (result.error || !result.id) throw new Error(result.error ?? 'No clinical record ID')
 
-        const docRecord: Document = {
+        const clinicalRecord: ClinicalRecord = {
           id: result.id,
           patient_id: patientId,
-          caregiver_id: '',
+          workspace_id: '',
           filename: file.name,
           blob_url: blob.url,
           file_size: String(file.size),
@@ -63,33 +58,31 @@ export default function DocumentUploader({
           status: 'uploaded',
           uploaded_at: new Date().toISOString(),
         }
-        onDocumentAdded(docRecord)
-        ok++
+        onRecordIndexed(clinicalRecord)
+        indexedCount++
 
-        ingestDocument(result.id).catch(err => {
-          console.error('[Upload] Ingest failed for', result.id, err)
+        indexClinicalRecord(result.id).catch(err => {
+          console.error('[Index] Graph ingestion failed for', result.id, err)
         })
       } catch (e: unknown) {
-        err++
+        failedCount++
         console.error(file.name, e)
       }
     }
 
-    if (err > 0) alert(`Indexed ${ok} of ${pdfs.length}. ${err} failed.`)
+    if (failedCount > 0) alert(`Indexed ${indexedCount} of ${pdfs.length}. ${failedCount} failed.`)
     router.refresh()
-    onUploadStart(false)
+    onIndexingChange(false)
     e.target.value = ''
   }
-
-  if (isDemo || isGuest) return null
 
   if (variant === 'dropzone') {
     return (
       <div className="mt-3">
         <label className="inline-flex flex-col items-center justify-center cursor-pointer">
-          <input type="file" accept=".pdf" multiple className="hidden" onChange={handleUpload} disabled={uploading} />
+          <input type="file" accept=".pdf" multiple className="hidden" onChange={handleIndexRecords} disabled={indexing} />
           <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-accent text-background font-mono text-[11px] font-semibold hover:opacity-90 transition-opacity">
-            {uploading ? (
+            {indexing ? (
               'Indexing records...'
             ) : (
               <>
@@ -110,9 +103,9 @@ export default function DocumentUploader({
 
   return (
     <label className="cursor-pointer inline-flex items-center">
-      <input type="file" accept=".pdf" multiple className="hidden" onChange={handleUpload} disabled={uploading} />
+      <input type="file" accept=".pdf" multiple className="hidden" onChange={handleIndexRecords} disabled={indexing} />
       <span className="font-mono text-[10px] text-accent hover:text-foreground transition-colors font-medium">
-        {uploading ? 'Indexing...' : '+ Index Record'}
+        {indexing ? 'Indexing...' : '+ Index Record'}
       </span>
     </label>
   )

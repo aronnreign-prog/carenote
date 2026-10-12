@@ -1,36 +1,13 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import type { Patient, Document, Briefing } from '@/types/database'
+import type { Patient, ClinicalRecord, ClinicalSynthesis } from '@/types/database'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import ReactMarkdown from 'react-markdown'
-import DocumentList from './DocumentList'
-import { PipelineBar } from './PipelineBar'
-import { generateBriefing, createBriefingRecord, askPatientClinicalQuery } from './pipeline-actions'
-import { deleteBriefing } from '@/app/dashboard/actions'
+import ClinicalTimeline from './ClinicalTimeline'
+import { createSynthesisRecord, askPatientClinicalQuery } from './pipeline-actions'
+import { deleteClinicalSynthesis } from '@/app/dashboard/actions'
 import { FlaggedBanner } from '@/components/clinical'
-
-// Demo data
-const DEMO_DOCUMENTS: Document[] = [
-  { id: 'd1', patient_id: 'demo-1', caregiver_id: 'demo', filename: 'Lab Result Mar 2024.pdf', document_type: 'Lab Result', document_date: '2024-03-14', status: 'extracted', uploaded_at: '2024-03-14T10:00:00Z' },
-  { id: 'd2', patient_id: 'demo-1', caregiver_id: 'demo', filename: 'Cardiology Visit Notes.pdf', document_type: 'Clinic Note', document_date: '2024-03-11', status: 'extracted', uploaded_at: '2024-03-11T14:30:00Z' },
-  { id: 'd3', patient_id: 'demo-1', caregiver_id: 'demo', filename: 'Lab Result Sep 2023.pdf', document_type: 'Lab Result', document_date: '2023-09-05', status: 'extracted', uploaded_at: '2023-09-05T09:15:00Z' },
-]
-
-const DEMO_BRIEFING: Briefing = {
-  id: 'b1', patient_id: 'demo-1', caregiver_id: 'demo', audience: 'specialist', status: 'complete',
-  source_doc_ids: ['d1', 'd2', 'd3'], created_at: new Date().toISOString(), completed_at: new Date().toISOString(),
-  briefing_text: "## Patient Summary\n\nMargaret Thompson (DOB 1945-03-12) presents with a documented 18-month decline in renal function across 6 lab draws sourced from 3 different providers. GFR has fallen from 65 to 47 over this period [claim:c1].\n\nHer new cardiologist prescribed Lisinopril (10 mg daily) on 2024-03-14 [claim:c2] - an ACE inhibitor that is contraindicated in the context of declining kidney function [claim:c3].\n\n## Current Medications\n\n- Lisinopril 10 mg daily - NEW, prescribed 2024-03-14 [claim:c2]\n- Atorvastatin 40 mg nightly - ongoing since 2022-06 [claim:c4]\n- Metoprolol succinate 25 mg daily - ongoing since 2021-11 [claim:c5]\n\n## Lab Trends\n\nGFR: `65` (Jun 2022) → `58` (Dec 2022) → `51` (Jun 2023) → `47` (Dec 2023) - consistent decline [claim:c1].\n\n## Recommendation\n\nFlag the Lisinopril prescription for review. Request nephrology consult [claim:c3].",
-  claims: [
-    { claim_id: 'c1', claim_text: 'GFR has fallen from 65 to 47', claim_type: 'source_document', flag: 'SUPPORTED', evidence: { source_doc_id: 'd1', source_quote: 'eGFR 47 mL/min/1.73m2', source_page: 1 } },
-    { claim_id: 'c2', claim_text: 'Lisinopril 10 mg daily', claim_type: 'source_document', flag: 'SUPPORTED', evidence: { source_doc_id: 'd2', source_quote: 'Lisinopril 10mg QD', source_page: 2 } },
-    { claim_id: 'c3', claim_text: 'ACE inhibitor contraindicated in declining kidney function', claim_type: 'medical_knowledge', flag: 'MEDICAL_KNOWLEDGE', evidence: { entry_text: 'ACE inhibitors reduce renal perfusion pressure and can exacerbate acute renal decline.' } },
-    { claim_id: 'c4', claim_text: 'Atorvastatin 40 mg nightly ongoing', claim_type: 'source_document', flag: 'SUPPORTED', evidence: { source_doc_id: 'd2', source_quote: 'Atorvastatin 40mg', source_page: 1 } },
-    { claim_id: 'c5', claim_text: 'Metoprolol succinate 25 mg daily ongoing', claim_type: 'source_document', flag: 'SUPPORTED', evidence: { source_doc_id: 'd2', source_quote: 'Metoprolol succinate 25mg', source_page: 1 } },
-  ],
-  flagged_concerns: [{ concern: 'ACE inhibitor prescribed despite declining GFR trend.', severity: 'high', related_claims: ['c1', 'c2', 'c3'] }],
-}
 
 type EvidenceItem = {
   source_doc_id?: string
@@ -62,12 +39,12 @@ function formatShortDate(dateStr: string | null | undefined): string {
 
 function CitationChip({
   claim,
-  onDocClick,
-  documents = [],
+  onRecordClick,
+  records = [],
 }: {
   claim: Claim
-  onDocClick: (e: React.MouseEvent, id: string, page?: number) => void
-  documents?: Document[]
+  onRecordClick: (e: React.MouseEvent, id: string, page?: number) => void
+  records?: ClinicalRecord[]
 }) {
   const isDrug = claim.flag === 'MEDICAL_KNOWLEDGE' || claim.claim_type === 'medical_knowledge'
   const isConflicting = claim.flag === 'CONFLICTING'
@@ -125,25 +102,25 @@ function CitationChip({
   return (
     <>
       {evidenceList.map((ev, idx) => {
-        const docId = ev.source_doc_id
+        const recordId = ev.source_doc_id
         const page = ev.source_page
-        const doc = docId ? documents.find((d) => d.id === docId) : undefined
+        const record = recordId ? records.find((r) => r.id === recordId) : undefined
 
-        // If docId is missing/invalid or doc is not in patient documents, show honest unverified badge rather than broken dead button
-        if (!docId || !doc) {
+        // If recordId is missing/invalid or record is not in patient timeline, show honest unverified badge rather than broken dead button
+        if (!recordId || !record) {
           return (
             <span
               key={idx}
               className="inline-flex items-center gap-1 font-mono text-[10px] sm:text-[9px] border rounded px-2 py-0.5 sm:px-1.5 sm:py-0.5 ml-1 align-middle border-muted text-muted-foreground bg-muted/20 cursor-default"
-              title={ev.source_quote || ev.entry_text || claim.claim_text || 'Source record not found in documents'}
+              title={ev.source_quote || ev.entry_text || claim.claim_text || 'Source record not found in timeline'}
             >
               ? Unverified
             </span>
           )
         }
 
-        const typeLabel = doc.document_type || 'Doc'
-        const dateLabel = doc.document_date ? formatShortDate(doc.document_date) : 'Undated'
+        const typeLabel = record.document_type || 'Record'
+        const dateLabel = record.document_date ? formatShortDate(record.document_date) : 'Undated'
         const pageLabel = page && page > 1 ? ` · p.${page}` : ''
         const label = `${typeLabel} · ${dateLabel}${pageLabel}`
         const title = ev.source_quote || ev.entry_text || claim.claim_text || ''
@@ -151,7 +128,7 @@ function CitationChip({
         return (
           <button
             key={idx}
-            onClick={(e) => onDocClick(e, docId, page ?? 1)}
+            onClick={(e) => onRecordClick(e, recordId, page ?? 1)}
             className="inline-flex items-center gap-1 font-mono text-[10px] sm:text-[9px] border rounded px-2 py-1 sm:px-1.5 sm:py-0.5 ml-1 align-middle transition-colors border-accent/40 text-accent bg-accent-dim hover:border-accent hover:bg-accent/20 cursor-pointer touch-manipulation my-0.5"
             title={title}
           >
@@ -166,8 +143,8 @@ function CitationChip({
 function renderContentWithClaims(
   node: React.ReactNode,
   claimsMap: Record<string, Claim>,
-  onDocClick: (e: React.MouseEvent, id: string, page?: number) => void,
-  documents: Document[] = []
+  onRecordClick: (e: React.MouseEvent, id: string, page?: number) => void,
+  records: ClinicalRecord[] = []
 ): React.ReactNode {
   if (typeof node === 'string') {
     const parts = node.split(/(\[claim:[^\]]+\])/g)
@@ -184,7 +161,7 @@ function renderContentWithClaims(
           const claim = claimsMap[claimId]
           if (claim) {
             validChips.push(
-              <CitationChip key={`${i}-${subIdx}`} claim={claim} onDocClick={onDocClick} documents={documents} />
+              <CitationChip key={`${i}-${subIdx}`} claim={claim} onRecordClick={onRecordClick} records={records} />
             )
           }
         })
@@ -201,7 +178,7 @@ function renderContentWithClaims(
   if (Array.isArray(node)) {
     return node.map((child, i) => (
       <React.Fragment key={i}>
-        {renderContentWithClaims(child, claimsMap, onDocClick, documents)}
+        {renderContentWithClaims(child, claimsMap, onRecordClick, records)}
       </React.Fragment>
     ))
   }
@@ -212,7 +189,7 @@ function renderContentWithClaims(
       return React.cloneElement(
         element,
         element.props,
-        renderContentWithClaims(element.props.children, claimsMap, onDocClick, documents)
+        renderContentWithClaims(element.props.children, claimsMap, onRecordClick, records)
       )
     }
   }
@@ -220,22 +197,22 @@ function renderContentWithClaims(
   return node
 }
 
-interface Props { patient: Patient; initialDocuments: Document[]; initialBriefings: Briefing[] }
+interface Props {
+  patient: Patient
+  initialRecords: ClinicalRecord[]
+  initialSyntheses: ClinicalSynthesis[]
+}
 
-export default function PatientDetailClient({ patient, initialDocuments, initialBriefings }: Props) {
-  const isDemo = patient.id.startsWith('demo-')
-  const router = useRouter()
-  const isGuest = isDemo
+export default function PatientDetailClient({ patient, initialRecords, initialSyntheses }: Props) {
+  const [records, setRecords] = useState<ClinicalRecord[]>(initialRecords)
+  const [syntheses, setSyntheses] = useState<ClinicalSynthesis[]>(initialSyntheses)
+  const [activeSynthesisId, setActiveSynthesisId] = useState<string | null>(initialSyntheses[0]?.id ?? null)
+  const [synthesizing, setSynthesizing] = useState(false)
+  const [indexingRecord, setIndexingRecord] = useState(false)
+  const [activeView, setActiveView] = useState<'synthesis' | 'query'>('synthesis')
+  const [isTimelineDrawerOpen, setIsTimelineDrawerOpen] = useState(false)
 
-  const [documents, setDocuments] = useState<Document[]>(isDemo ? DEMO_DOCUMENTS : initialDocuments)
-  const [briefings, setBriefings] = useState<Briefing[]>(isDemo ? [DEMO_BRIEFING] : initialBriefings)
-  const [activeBriefingId, setActiveBriefingId] = useState<string | null>(isDemo ? DEMO_BRIEFING.id : (initialBriefings[0]?.id ?? null))
-  const [generating, setGenerating] = useState(false)
-  const [uploadingFile, setUploadingFile] = useState(false)
-  const [activeView, setActiveView] = useState<'briefing' | 'query'>('briefing')
-  const [isRecordsDrawerOpen, setIsRecordsDrawerOpen] = useState(false)
-
-  // On-demand clinical query state
+  // On-demand temporal memory query state
   const [queryInput, setQueryInput] = useState('')
   const [queryRunning, setQueryRunning] = useState(false)
   const [queryError, setQueryError] = useState<string | null>(null)
@@ -250,10 +227,10 @@ export default function PatientDetailClient({ patient, initialDocuments, initial
   const [contextMenu, setContextMenu] = useState<{
     x: number
     y: number
-    briefingId: string
+    synthesisId: string
   } | null>(null)
 
-  const activeBriefing = briefings.find(b => b.id === activeBriefingId) ?? briefings[0] ?? null
+  const activeSynthesis = syntheses.find(s => s.id === activeSynthesisId) ?? syntheses[0] ?? null
 
   // Dismiss context menu on outside click, scroll, or Escape key
   useEffect(() => {
@@ -272,32 +249,31 @@ export default function PatientDetailClient({ patient, initialDocuments, initial
     }
   }, [contextMenu])
 
-  // Adaptive polling for in-progress documents
+  // Adaptive polling for in-progress clinical records and syntheses
   useEffect(() => {
-    if (isDemo) return
-    const hasPendingDoc = documents.some(d => ['uploaded', 'processing', 'extracting'].includes(d.status))
-    const hasPendingBriefing = briefings.some(b => b.status === 'queued' || b.status === 'processing')
-    if (!hasPendingBriefing && !hasPendingDoc) return
+    const hasPendingRecord = records.some(r => ['uploaded', 'processing', 'extracting'].includes(r.status))
+    const hasPendingSynthesis = syntheses.some(s => s.status === 'queued' || s.status === 'processing')
+    if (!hasPendingSynthesis && !hasPendingRecord) return
 
     let interval = 3000
     let timer: ReturnType<typeof setTimeout>
     const poll = async () => {
       if (document.visibilityState === 'hidden') { timer = setTimeout(poll, interval * 2); return }
       try {
-        const [docsRes, briefRes] = await Promise.all([
-          fetch(`/api/patients/${patient.id}/documents`).then(r => r.json()),
-          fetch(`/api/patients/${patient.id}/briefings`).then(r => r.json()),
+        const [recordsRes, synthesesRes] = await Promise.all([
+          fetch(`/api/patients/${patient.id}/records`).then(r => r.json()),
+          fetch(`/api/patients/${patient.id}/syntheses`).then(r => r.json()),
         ])
-        const updatedDocs = docsRes.documents
-        const updatedBriefings = briefRes.briefings
+        const updatedRecords = recordsRes.records
+        const updatedSyntheses = synthesesRes.syntheses
 
-        if (updatedDocs) setDocuments(updatedDocs as Document[])
-        if (updatedBriefings) setBriefings(updatedBriefings as Briefing[])
-        
+        if (updatedRecords) setRecords(updatedRecords as ClinicalRecord[])
+        if (updatedSyntheses) setSyntheses(updatedSyntheses as ClinicalSynthesis[])
+
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const stillPending = ((updatedDocs || []) as any[]).some((d: any) => ['uploaded', 'processing', 'extracting'].includes(d.status)) ||
+        const stillPending = ((updatedRecords || []) as any[]).some((r: any) => ['uploaded', 'processing', 'extracting'].includes(r.status)) ||
                              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                             ((updatedBriefings || []) as any[]).some((b: any) => b.status === 'queued' || b.status === 'processing')
+                             ((updatedSyntheses || []) as any[]).some((s: any) => s.status === 'queued' || s.status === 'processing')
         interval = stillPending ? Math.min(interval * 1.5, 30000) : 3000
       } catch (err) {
         console.error('Polling error', err)
@@ -306,42 +282,40 @@ export default function PatientDetailClient({ patient, initialDocuments, initial
     }
     timer = setTimeout(poll, interval)
     return () => clearTimeout(timer)
-  }, [patient.id, isDemo, briefings, documents])
+  }, [patient.id, syntheses, records])
 
-  const handleGenerateBriefing = async () => {
-    if (isGuest) { alert('Sign in to generate briefings.'); return }
-    setGenerating(true)
+  const handleSynthesizePatientGraph = async () => {
+    setSynthesizing(true)
     try {
-      const result = await createBriefingRecord(patient.id, 'specialist', documents.map(d => d.id))
-      if (result.error || !result.id) throw new Error(result.error ?? 'No briefing ID')
-      
-      const newBriefing = {
+      const result = await createSynthesisRecord(patient.id, records.map(r => r.id))
+      if (result.error || !result.id) throw new Error(result.error ?? 'No synthesis ID')
+
+      const newSynthesis: ClinicalSynthesis = {
         id: result.id,
         patient_id: patient.id,
-        caregiver_id: patient.caregiver_id,
-        audience: 'specialist',
+        workspace_id: patient.workspace_id,
         status: 'queued',
-        source_doc_ids: documents.map(d => d.id),
+        source_doc_ids: records.map(r => r.id),
         created_at: new Date().toISOString()
       }
-      
-      setBriefings(prev => [newBriefing as Briefing, ...prev])
-      setActiveBriefingId(result.id)
 
-      fetch(`/api/patients/${patient.id}/briefings/stream`, {
+      setSyntheses(prev => [newSynthesis, ...prev])
+      setActiveSynthesisId(result.id)
+
+      fetch(`/api/patients/${patient.id}/syntheses/stream`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ briefingId: result.id }),
+        body: JSON.stringify({ synthesisId: result.id }),
       })
         .then(async (res) => {
           if (!res.ok) {
             const data = await res.json().catch(() => ({}))
-            console.error('[Briefing Stream] Failed:', data.error)
-            setBriefings(prev => prev.map(b => b.id === result.id ? {
-              ...b,
+            console.error('[Synthesis Stream] Failed:', data.error)
+            setSyntheses(prev => prev.map(s => s.id === result.id ? {
+              ...s,
               status: 'failed',
-              error_message: data.error || 'Failed to generate briefing.',
-            } : b))
+              error_message: data.error || 'Failed to synthesize patient graph.',
+            } : s))
             return
           }
           if (res.body) {
@@ -357,15 +331,16 @@ export default function PatientDetailClient({ patient, initialDocuments, initial
             }
             try {
               const parsed = JSON.parse(accumulated)
-              if (parsed?.briefing_text) {
-                setBriefings(prev => prev.map(b => b.id === result.id ? {
-                  ...b,
+              const rawText = parsed?.synthesis_text
+              if (rawText) {
+                setSyntheses(prev => prev.map(s => s.id === result.id ? {
+                  ...s,
                   status: 'complete',
-                  briefing_text: parsed.briefing_text.replace(/^[0-9]+\s+/, '').trim(),
+                  synthesis_text: rawText.replace(/^[0-9]+\s+/, '').trim(),
                   claims: parsed.claims || [],
                   flagged_concerns: parsed.flagged_concerns || [],
                   completed_at: new Date().toISOString(),
-                } : b))
+                } : s))
               }
             } catch {
               // Non-fatal: if JSON parsing of full stream text is incomplete, background onFinish & polling keep state in sync
@@ -373,77 +348,50 @@ export default function PatientDetailClient({ patient, initialDocuments, initial
           }
         })
         .catch(err => {
-          console.error('[Briefing Stream] Error:', err)
-          setBriefings(prev => prev.map(b => b.id === result.id ? {
-            ...b,
+          console.error('[Synthesis Stream] Error:', err)
+          setSyntheses(prev => prev.map(s => s.id === result.id ? {
+            ...s,
             status: 'failed',
             error_message: err instanceof Error ? err.message : 'Network stream error',
-          } : b))
+          } : s))
         })
     } catch (err: unknown) {
-      alert('Failed to start briefing: ' + (err instanceof Error ? err.message : 'Unknown error'))
+      alert('Failed to start clinical synthesis: ' + (err instanceof Error ? err.message : 'Unknown error'))
     } finally {
-      setGenerating(false)
+      setSynthesizing(false)
     }
   }
 
-  const handleDeleteBriefing = async (briefingId: string, e?: React.MouseEvent) => {
+  const handleDeleteSynthesis = async (synthesisId: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation()
-    if (isDemo) return
-    if (!confirm('Are you sure you want to delete this briefing?')) return
+    if (!confirm('Are you sure you want to delete this clinical synthesis?')) return
 
     try {
-      const res = await deleteBriefing(patient.id, briefingId)
+      const res = await deleteClinicalSynthesis(patient.id, synthesisId)
       if (res.error) {
-        alert('Failed to delete briefing: ' + res.error)
+        alert('Failed to delete synthesis: ' + res.error)
         return
       }
-      setBriefings(prev => prev.filter(b => b.id !== briefingId))
-      if (activeBriefingId === briefingId) {
-        const remaining = briefings.filter(b => b.id !== briefingId)
-        setActiveBriefingId(remaining[0]?.id ?? null)
+      setSyntheses(prev => prev.filter(s => s.id !== synthesisId))
+      if (activeSynthesisId === synthesisId) {
+        const remaining = syntheses.filter(s => s.id !== synthesisId)
+        setActiveSynthesisId(remaining[0]?.id ?? null)
       }
     } catch (err) {
-      alert('Error deleting briefing: ' + (err instanceof Error ? err.message : 'Unknown error'))
+      alert('Error deleting synthesis: ' + (err instanceof Error ? err.message : 'Unknown error'))
     }
   }
 
   const handleRunQuery = async (customQuestion?: string) => {
     const q = (customQuestion || queryInput).trim()
     if (!q) return
-    if (isGuest) {
-      alert('Sign in to query patient temporal memory.')
-      return
-    }
-    if (documents.length === 0) {
+    if (records.length === 0) {
       alert('Please index at least one medical record before querying.')
       return
     }
 
     setQueryRunning(true)
     setQueryError(null)
-
-    if (isDemo) {
-      setTimeout(() => {
-        const demoClaims: Claim[] = [
-          { claim_id: 'c1', claim_text: 'GFR has fallen from 65 to 47', claim_type: 'source_document', flag: 'SUPPORTED', evidence: [{ source_doc_id: 'd1', source_quote: 'eGFR 47 mL/min/1.73m2', source_page: 1 }] },
-          { claim_id: 'c2', claim_text: 'Lisinopril 10 mg daily prescribed 2024-03-14', claim_type: 'source_document', flag: 'SUPPORTED', evidence: [{ source_doc_id: 'd2', source_quote: 'Lisinopril 10 mg PO daily', source_page: 1 }] },
-        ]
-        setQueryHistory(prev => [
-          {
-            id: 'demo-q-' + Date.now(),
-            question: q,
-            answer: `Based on Margaret's records, eGFR shows a documented decline from 65 down to 47 across lab tests [claim:c1]. Lisinopril 10 mg daily was prescribed on 2024-03-14 [claim:c2].`,
-            claims: demoClaims,
-            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          },
-          ...prev,
-        ])
-        setQueryInput('')
-        setQueryRunning(false)
-      }, 700)
-      return
-    }
 
     try {
       const lastTurn = queryHistory[0]
@@ -452,7 +400,7 @@ export default function PatientDetailClient({ patient, initialDocuments, initial
 
       const res = await askPatientClinicalQuery(patient.id, q, lastTurn)
       if (res.error || !res.answer) {
-        setQueryError(res.error || 'Failed to retrieve answer from records.')
+        setQueryError(res.error || 'Failed to retrieve answer from temporal memory.')
       } else {
         setQueryHistory(prev => [
           {
@@ -473,23 +421,22 @@ export default function PatientDetailClient({ patient, initialDocuments, initial
     }
   }
 
-  const handleDocClick = async (e: React.MouseEvent, docId: string, page?: number) => {
+  const handleRecordClick = async (e: React.MouseEvent, recordId: string, page?: number) => {
     e.preventDefault()
-    if (isDemo) return
-    const doc = documents.find(d => d.id === docId)
-    if (!doc) { alert('Document not available.'); return }
-    const url = page ? `/api/documents/${doc.id}/view#page=${page}` : `/api/documents/${doc.id}/view`
+    const record = records.find(r => r.id === recordId)
+    if (!record) { alert('Clinical record not available.'); return }
+    const url = page ? `/api/records/${record.id}/view#page=${page}` : `/api/records/${record.id}/view`
     window.open(url, '_blank', 'noopener,noreferrer')
   }
 
-  const handleRemoveDocument = (id: string) => setDocuments(prev => prev.filter(d => d.id !== id))
-  const handleAddDocument = (doc: Document) => setDocuments(prev => [doc, ...prev])
-  const handleDocumentStatusUpdate = (id: string, status: Document['status']) => {
-    setDocuments(prev => prev.map(d => d.id === id ? { ...d, status, error_message: null } : d))
+  const handleRecordPruned = (id: string) => setRecords(prev => prev.filter(r => r.id !== id))
+  const handleRecordIndexed = (record: ClinicalRecord) => setRecords(prev => [record, ...prev])
+  const handleRecordStatusUpdate = (id: string, status: ClinicalRecord['status']) => {
+    setRecords(prev => prev.map(r => r.id === id ? { ...r, status, error_message: null } : r))
   }
 
-  const concerns: FlaggedConcern[] = (activeBriefing?.flagged_concerns as FlaggedConcern[] | null) ?? []
-  const claimsArray: Claim[] = (activeBriefing?.claims as Claim[] | null) ?? []
+  const concerns: FlaggedConcern[] = (activeSynthesis?.flagged_concerns as FlaggedConcern[] | null) ?? []
+  const claimsArray: Claim[] = (activeSynthesis?.claims as Claim[] | null) ?? []
   const supported = claimsArray.filter(c => c.flag === 'SUPPORTED').length
   const partial = claimsArray.filter(c => c.flag === 'PARTIALLY SUPPORTED').length
   const unsupported = claimsArray.filter(c => c.flag === 'UNSUPPORTED').length
@@ -503,7 +450,7 @@ export default function PatientDetailClient({ patient, initialDocuments, initial
         <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
           <Link href="/dashboard" className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors shrink-0">
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M9.5 6H2.5M5 3L2 6l3 3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
-            <span className="font-mono text-[10px]">Dashboard</span>
+            <span className="font-mono text-[10px]">Patient Graphs</span>
           </Link>
           <span className="text-border">/</span>
           <span className="font-mono text-[10px] sm:text-[11px] text-foreground font-semibold truncate">{patient.name}</span>
@@ -517,34 +464,28 @@ export default function PatientDetailClient({ patient, initialDocuments, initial
         <div className="flex items-center gap-2 shrink-0">
           <button
             type="button"
-            onClick={() => setIsRecordsDrawerOpen(true)}
+            onClick={() => setIsTimelineDrawerOpen(true)}
             className="md:hidden inline-flex items-center gap-1.5 font-mono text-[10px] px-2.5 py-1.5 rounded border border-border bg-surface-raised text-muted-foreground hover:text-foreground hover:border-accent/40 transition-colors shrink-0 touch-manipulation"
-            aria-label="Open records drawer"
+            aria-label="Open clinical timeline drawer"
           >
-            <span>📄 Records</span>
+            <span>📄 Timeline</span>
             <span className="bg-accent/20 text-accent text-[9px] px-1.5 py-0.2 rounded-full font-bold">
-              {documents.length}
+              {records.length}
             </span>
           </button>
-          {isDemo && <span className="font-mono text-[9px] border border-border text-muted-foreground px-2 py-0.5 rounded">DEMO RECORD</span>}
-          {(isGuest || isDemo) && (
-            <Link href="/#demo" className="font-mono text-[10px] bg-white text-black px-2.5 py-1 rounded hover:bg-white/90 transition-all font-semibold">
-              Request access
-            </Link>
-          )}
         </div>
       </header>
 
-      {/* Mobile Records Drawer (Vercel Sheet / Drawer Pattern) */}
-      {isRecordsDrawerOpen && (
+      {/* Mobile Clinical Timeline Drawer */}
+      {isTimelineDrawerOpen && (
         <div
           className="fixed inset-0 z-40 bg-black/60 backdrop-blur-xs transition-opacity md:hidden"
-          onClick={() => setIsRecordsDrawerOpen(false)}
+          onClick={() => setIsTimelineDrawerOpen(false)}
         />
       )}
       <div
         className={`fixed inset-y-0 left-0 z-50 w-[85vw] max-w-sm bg-surface border-r border-border shadow-2xl flex flex-col transform transition-transform duration-300 ease-in-out md:hidden ${
-          isRecordsDrawerOpen ? 'translate-x-0' : '-translate-x-full'
+          isTimelineDrawerOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         <div className="px-4 py-3.5 border-b border-border flex items-center justify-between bg-surface-raised/40 shrink-0">
@@ -554,12 +495,12 @@ export default function PatientDetailClient({ patient, initialDocuments, initial
             </div>
             <div className="min-w-0">
               <h2 className="text-[13px] font-semibold text-foreground truncate">{patient.name}</h2>
-              <p className="font-mono text-[9px] text-muted-foreground">{patient.relationship} · {age}y · DOB {patient.date_of_birth}</p>
+              <p className="font-mono text-[9px] text-muted-foreground">{patient.biological_sex} · {age}y · DOB {patient.date_of_birth}</p>
             </div>
           </div>
           <button
             type="button"
-            onClick={() => setIsRecordsDrawerOpen(false)}
+            onClick={() => setIsTimelineDrawerOpen(false)}
             className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-surface-raised transition-colors shrink-0 font-mono text-xs px-2 border border-border"
             aria-label="Close drawer"
           >
@@ -568,42 +509,38 @@ export default function PatientDetailClient({ patient, initialDocuments, initial
         </div>
 
         <div className="flex-1 overflow-y-auto">
-          <DocumentList
+          <ClinicalTimeline
             patientId={patient.id}
-            documents={documents}
-            isDemo={isDemo}
-            isGuest={isGuest}
-            uploading={uploadingFile}
-            onUploadStart={setUploadingFile}
-            onDocumentAdded={handleAddDocument}
-            onDocumentRemoved={handleRemoveDocument}
-            onDocumentStatusUpdate={handleDocumentStatusUpdate}
-            onDocClick={(e, id, page) => {
-              setIsRecordsDrawerOpen(false)
-              handleDocClick(e, id, page)
+            records={records}
+            indexing={indexingRecord}
+            onIndexingChange={setIndexingRecord}
+            onRecordIndexed={handleRecordIndexed}
+            onRecordPruned={handleRecordPruned}
+            onRecordStatusUpdate={handleRecordStatusUpdate}
+            onRecordClick={(e, id, page) => {
+              setIsTimelineDrawerOpen(false)
+              handleRecordClick(e, id, page)
             }}
           />
         </div>
 
-        {!isDemo && !isGuest && (
-          <div className="border-t border-border p-3 shrink-0 bg-surface-raised/40">
-            <button
-              onClick={() => {
-                setIsRecordsDrawerOpen(false)
-                handleGenerateBriefing()
-                setActiveView('briefing')
-              }}
-              disabled={generating || documents.length === 0 || documents.some(d => d.status === 'uploaded' || d.status === 'extracting')}
-              className="w-full min-h-[40px] bg-white text-black font-mono text-[11px] font-semibold py-2.5 px-3 rounded-lg hover:bg-white/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 cursor-pointer touch-manipulation focus-visible:ring-2 focus-visible:ring-white/60 outline-none shadow-sm"
-            >
-              {generating
-                ? 'Traversing patient graph...'
-                : documents.some(d => d.status === 'uploaded' || d.status === 'extracting')
-                ? 'Indexing into temporal memory...'
-                : 'Synthesize Longitudinal Briefing'}
-            </button>
-          </div>
-        )}
+        <div className="border-t border-border p-3 shrink-0 bg-surface-raised/40">
+          <button
+            onClick={() => {
+              setIsTimelineDrawerOpen(false)
+              handleSynthesizePatientGraph()
+              setActiveView('synthesis')
+            }}
+            disabled={synthesizing || records.length === 0 || records.some(r => r.status === 'uploaded' || r.status === 'extracting')}
+            className="w-full min-h-[40px] bg-white text-black font-mono text-[11px] font-semibold py-2.5 px-3 rounded-lg hover:bg-white/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 cursor-pointer touch-manipulation focus-visible:ring-2 focus-visible:ring-white/60 outline-none shadow-sm"
+          >
+            {synthesizing
+              ? 'Traversing patient graph...'
+              : records.some(r => r.status === 'uploaded' || r.status === 'extracting')
+              ? 'Indexing into temporal memory...'
+              : 'Synthesize Patient Graph'}
+          </button>
+        </div>
       </div>
 
       <FlaggedBanner concerns={concerns} />
@@ -618,39 +555,38 @@ export default function PatientDetailClient({ patient, initialDocuments, initial
               </div>
               <div>
                 <h1 className="text-[14px] font-semibold text-foreground leading-tight">{patient.name}</h1>
-                <p className="font-mono text-[10px] text-muted-foreground">{patient.relationship} · {age}y · DOB {patient.date_of_birth}</p>
+                <p className="font-mono text-[10px] text-muted-foreground">{patient.biological_sex} · {age}y · DOB {patient.date_of_birth}</p>
               </div>
             </div>
           </div>
 
-          <DocumentList
-            patientId={patient.id} documents={documents} isDemo={isDemo} isGuest={isGuest}
-            uploading={uploadingFile}
-            onUploadStart={setUploadingFile}
-            onDocumentAdded={handleAddDocument}
-            onDocumentRemoved={handleRemoveDocument}
-            onDocumentStatusUpdate={handleDocumentStatusUpdate}
-            onDocClick={handleDocClick}
+          <ClinicalTimeline
+            patientId={patient.id}
+            records={records}
+            indexing={indexingRecord}
+            onIndexingChange={setIndexingRecord}
+            onRecordIndexed={handleRecordIndexed}
+            onRecordPruned={handleRecordPruned}
+            onRecordStatusUpdate={handleRecordStatusUpdate}
+            onRecordClick={handleRecordClick}
           />
 
-          {!isDemo && !isGuest && (
-            <div className="border-t border-border p-4 shrink-0">
-              <button
-                onClick={() => {
-                  handleGenerateBriefing()
-                  setActiveView('briefing')
-                }}
-                disabled={generating || documents.length === 0 || documents.some(d => d.status === 'uploaded' || d.status === 'extracting')}
-                className="w-full min-h-[40px] bg-white text-black font-mono text-[11px] font-semibold py-2.5 px-3 rounded-lg hover:bg-white/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 cursor-pointer touch-manipulation focus-visible:ring-2 focus-visible:ring-white/60 outline-none shadow-sm"
-              >
-                {generating
-                  ? 'Traversing patient graph...'
-                  : documents.some(d => d.status === 'uploaded' || d.status === 'extracting')
-                  ? 'Indexing into temporal memory...'
-                  : 'Synthesize Longitudinal Briefing'}
-              </button>
-            </div>
-          )}
+          <div className="border-t border-border p-4 shrink-0">
+            <button
+              onClick={() => {
+                handleSynthesizePatientGraph()
+                setActiveView('synthesis')
+              }}
+              disabled={synthesizing || records.length === 0 || records.some(r => r.status === 'uploaded' || r.status === 'extracting')}
+              className="w-full min-h-[40px] bg-white text-black font-mono text-[11px] font-semibold py-2.5 px-3 rounded-lg hover:bg-white/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 cursor-pointer touch-manipulation focus-visible:ring-2 focus-visible:ring-white/60 outline-none shadow-sm"
+            >
+              {synthesizing
+                ? 'Traversing patient graph...'
+                : records.some(r => r.status === 'uploaded' || r.status === 'extracting')
+                ? 'Indexing into temporal memory...'
+                : 'Synthesize Patient Graph'}
+            </button>
+          </div>
         </aside>
 
         {/* Main Canvas */}
@@ -659,14 +595,14 @@ export default function PatientDetailClient({ patient, initialDocuments, initial
           <div className="flex border-b border-border px-3 sm:px-8 py-2 sm:py-2.5 items-center justify-between bg-surface sticky top-0 z-10 shrink-0 gap-2">
             <div className="flex items-center gap-1.5 sm:gap-2 flex-1 sm:flex-initial">
               <button
-                onClick={() => setActiveView('briefing')}
+                onClick={() => setActiveView('synthesis')}
                 className={`flex-1 sm:flex-initial font-mono text-[11px] px-3 sm:px-3.5 py-1.5 rounded font-semibold transition-colors flex items-center justify-center gap-1.5 touch-manipulation ${
-                  activeView === 'briefing'
+                  activeView === 'synthesis'
                     ? 'bg-accent text-background'
                     : 'text-muted-foreground hover:text-foreground hover:bg-surface-raised border border-border'
                 }`}
               >
-                <span>📋</span> Longitudinal Briefing
+                <span>📋</span> Longitudinal Synthesis
               </button>
               <button
                 onClick={() => setActiveView('query')}
@@ -687,13 +623,13 @@ export default function PatientDetailClient({ patient, initialDocuments, initial
 
             <button
               type="button"
-              onClick={() => setIsRecordsDrawerOpen(true)}
+              onClick={() => setIsTimelineDrawerOpen(true)}
               className="md:hidden inline-flex items-center gap-1 font-mono text-[10px] px-2 py-1.5 rounded border border-border bg-surface-raised text-muted-foreground hover:text-foreground shrink-0 touch-manipulation"
-              title="Open prescriptions and notes drawer"
+              title="Open clinical records timeline drawer"
             >
-              <span>Prescriptions &amp; Notes</span>
+              <span>Clinical Records</span>
               <span className="bg-accent/20 text-accent text-[9px] px-1.5 py-0.2 rounded-full font-bold">
-                {documents.length}
+                {records.length}
               </span>
             </button>
           </div>
@@ -706,7 +642,7 @@ export default function PatientDetailClient({ patient, initialDocuments, initial
                   <span className="font-mono text-[9px] border border-accent/40 text-accent bg-accent-dim px-2 py-0.5 rounded">ZEP GRAPH MEMORY</span>
                 </div>
                 <p className="text-[12px] text-muted-foreground mt-1">
-                  Query years of accumulated medical records for {patient.name}. Facts, dose adjustments, and lab trajectories are resolved across time with interactive PaperTrail citations.
+                  Query years of accumulated clinical records for {patient.name}. Facts, dose adjustments, and lab trajectories are resolved across time with interactive PaperTrail citations.
                 </p>
               </div>
 
@@ -724,7 +660,7 @@ export default function PatientDetailClient({ patient, initialDocuments, initial
                       type="text"
                       value={queryInput}
                       onChange={(e) => setQueryInput(e.target.value)}
-                      placeholder={`Ask a longitudinal question (e.g., "How has kidney function changed over the past 12 months?", "Track all dose adjustments for Olanzapine")`}
+                      placeholder={`Ask a longitudinal question (e.g., "How has renal function trended across visits?", "Track all dose adjustments for Olanzapine")`}
                       disabled={queryRunning}
                       className="w-full bg-background border border-border rounded-md px-3.5 py-2.5 text-[16px] sm:text-[13px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-accent disabled:opacity-50"
                     />
@@ -786,7 +722,7 @@ export default function PatientDetailClient({ patient, initialDocuments, initial
                     <div className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" style={{ animationDelay: '0.2s' }} />
                     <div className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" style={{ animationDelay: '0.4s' }} />
                   </div>
-                  <p className="font-mono text-[11px] text-accent">Querying Zep graph memory & verifying citations...</p>
+                  <p className="font-mono text-[11px] text-accent">Querying Zep graph memory &amp; verifying PaperTrail citations...</p>
                 </div>
               )}
 
@@ -814,25 +750,25 @@ export default function PatientDetailClient({ patient, initialDocuments, initial
                               img: () => null,
                               h2: ({ children }) => (
                                 <h2 className="font-mono text-[9px] tracking-widest text-muted-foreground uppercase mt-4 mb-2 pb-1 border-b border-border">
-                                  {renderContentWithClaims(children, claimsMap, handleDocClick, documents)}
+                                  {renderContentWithClaims(children, claimsMap, handleRecordClick, records)}
                                 </h2>
                               ),
                               p: ({ children }) => (
                                 <p className="text-[13px] text-foreground leading-relaxed mb-3">
-                                  {renderContentWithClaims(children, claimsMap, handleDocClick, documents)}
+                                  {renderContentWithClaims(children, claimsMap, handleRecordClick, records)}
                                 </p>
                               ),
                               li: ({ children }) => (
                                 <li className="flex items-baseline gap-2 text-[13px] text-foreground mb-1.5">
                                   <span className="w-1 h-1 rounded-full bg-muted-foreground mt-2 shrink-0" />
-                                  <span>{renderContentWithClaims(children, claimsMap, handleDocClick, documents)}</span>
+                                  <span>{renderContentWithClaims(children, claimsMap, handleRecordClick, records)}</span>
                                 </li>
                               ),
                               ul: ({ children }) => <ul className="list-none pl-0 my-2 space-y-0">{children}</ul>,
                               ol: ({ children }) => <ol className="list-decimal pl-5 my-2 space-y-1 text-[13px] text-foreground">{children}</ol>,
                               strong: ({ children }) => (
                                 <strong className="font-semibold text-foreground">
-                                  {renderContentWithClaims(children, claimsMap, handleDocClick, documents)}
+                                  {renderContentWithClaims(children, claimsMap, handleRecordClick, records)}
                                 </strong>
                               ),
                               code: ({ children }) => (
@@ -851,16 +787,16 @@ export default function PatientDetailClient({ patient, initialDocuments, initial
                 </div>
               ) : !queryRunning && (
                 <div className="border border-dashed border-border rounded-lg p-8 text-center">
-                  <p className="font-mono text-[10px] tracking-widest text-muted-foreground uppercase mb-2">No queries asked yet</p>
+                  <p className="font-mono text-[10px] tracking-widest text-muted-foreground uppercase mb-2">No queries executed yet</p>
                   <p className="text-[12px] text-muted-foreground max-w-sm mx-auto">
-                    Type any clinical question above or select a quick prompt to query {patient.name}&apos;s verified timeline and documents.
+                    Type any clinical question above or select a quick prompt to query {patient.name}&apos;s temporal memory graph and clinical records timeline.
                   </p>
                 </div>
               )}
             </div>
           ) : (
             <div className="flex-1 relative">
-              {/* Context Menu for Tab Right-Click */}
+              {/* Context Menu for Synthesis Tab Right-Click */}
               {contextMenu && (
                 <div
                   style={{
@@ -875,70 +811,69 @@ export default function PatientDetailClient({ patient, initialDocuments, initial
                   <button
                     type="button"
                     onClick={() => {
-                      const id = contextMenu.briefingId
+                      const id = contextMenu.synthesisId
                       setContextMenu(null)
-                      handleDeleteBriefing(id)
+                      handleDeleteSynthesis(id)
                     }}
                     className="w-full text-left px-3 py-1.5 text-[11px] font-mono text-alert hover:bg-alert-dim hover:text-alert flex items-center gap-2 transition-colors cursor-pointer"
                   >
                     <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                       <path d="M1.5 3h9M4.5 3V2h3v1M3 3l.5 7.5h5L9 3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
-                    Delete Briefing
+                    Delete Synthesis
                   </button>
                 </div>
               )}
 
-              {briefings.length > 0 && (
+              {syntheses.length > 0 && (
                 <div className="border-b border-border px-6 py-2 flex items-center gap-2 overflow-x-auto">
-                  {briefings.map(b => (
+                  {syntheses.map(s => (
                     <div
-                      key={b.id}
-                      onClick={() => setActiveBriefingId(b.id)}
+                      key={s.id}
+                      onClick={() => setActiveSynthesisId(s.id)}
                       onContextMenu={(e) => {
                         e.preventDefault()
-                        if (isDemo) return
                         setContextMenu({
                           x: e.clientX,
                           y: e.clientY,
-                          briefingId: b.id,
+                          synthesisId: s.id,
                         })
                       }}
-                      title={isDemo ? undefined : 'Right-click for options'}
+                      title="Right-click for options"
                       className={`font-mono text-[10px] px-3 py-1.5 rounded border whitespace-nowrap transition-colors cursor-pointer select-none flex items-center gap-1.5 ${
-                        b.id === activeBriefingId
+                        s.id === activeSynthesisId
                           ? 'bg-accent-dim border-accent/40 text-accent font-semibold'
                           : 'border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground'
                       }`}
                     >
-                      {b.status === 'complete' && <span className="w-1.5 h-1.5 rounded-full bg-success shrink-0" />}
-                      {b.status === 'failed' && <span className="w-1.5 h-1.5 rounded-full bg-alert shrink-0" />}
-                      {(b.status === 'processing' || b.status === 'queued') && (
+                      {s.status === 'complete' && <span className="w-1.5 h-1.5 rounded-full bg-success shrink-0" />}
+                      {s.status === 'failed' && <span className="w-1.5 h-1.5 rounded-full bg-alert shrink-0" />}
+                      {(s.status === 'processing' || s.status === 'queued') && (
                         <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse shrink-0" />
                       )}
                       <span>
-                        {b.audience?.toUpperCase() === 'SPECIALIST' ? 'LONGITUDINAL' : (b.audience?.toUpperCase() || 'BRIEFING')} · {new Date(b.created_at).toLocaleDateString()}
+                        LONGITUDINAL · {new Date(s.created_at).toLocaleDateString()}
                       </span>
                     </div>
                   ))}
                 </div>
               )}
 
-              {activeBriefing ? (
+              {activeSynthesis ? (
                 <div className="px-4 sm:px-8 py-5 sm:py-6 max-w-3xl">
                   <div className="flex items-start justify-between mb-5 gap-2">
                     <div>
                       <h2 className="text-[15px] sm:text-[16px] font-semibold text-foreground">
-                        Longitudinal Clinical Briefing
+                        Longitudinal Clinical Synthesis
                       </h2>
-                      <p className="font-mono text-[9px] sm:text-[10px] text-muted-foreground mt-0.5">Generated {new Date(activeBriefing.created_at).toLocaleString()}</p>
+                      <p className="font-mono text-[9px] sm:text-[10px] text-muted-foreground mt-0.5">Synthesized {new Date(activeSynthesis.created_at).toLocaleString()}</p>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       <span className={`font-mono text-[9px] px-2 py-0.5 sm:py-1 rounded border ${
-                        activeBriefing.status === 'complete' ? 'text-success border-success/30 bg-success-dim' :
-                        activeBriefing.status === 'processing' || activeBriefing.status === 'queued' ? 'text-accent border-accent/30 bg-accent-dim' :
-                        activeBriefing.status === 'failed' ? 'text-alert border-alert/30 bg-alert-dim' : 'text-muted-foreground border-border'}`}>
-                        {activeBriefing.status?.toUpperCase()}
+                        activeSynthesis.status === 'complete' ? 'text-success border-success/30 bg-success-dim' :
+                        activeSynthesis.status === 'processing' || activeSynthesis.status === 'queued' ? 'text-accent border-accent/30 bg-accent-dim' :
+                        activeSynthesis.status === 'failed' ? 'text-alert border-alert/30 bg-alert-dim' : 'text-muted-foreground border-border'}`}>
+                        {activeSynthesis.status?.toUpperCase()}
                       </span>
                     </div>
                   </div>
@@ -947,7 +882,7 @@ export default function PatientDetailClient({ patient, initialDocuments, initial
                     <div className="border border-border rounded-md bg-surface-raised p-3 sm:px-4 sm:py-3 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                       <div>
                         <p className="font-mono text-[10px] text-accent tracking-widest uppercase mb-0.5">PaperTrail</p>
-                        <p className="font-mono text-[9px] text-muted-foreground">Every claim traced to source</p>
+                        <p className="font-mono text-[9px] text-muted-foreground">Every claim traced to source record</p>
                       </div>
                       <div className="flex items-center gap-2 sm:gap-4 flex-wrap sm:justify-end w-full sm:w-auto">
                         {supported > 0 && <div className="flex items-center gap-1.5"><div className="w-1.5 h-1.5 rounded-full bg-success" /><span className="font-mono text-[9px] sm:text-[10px] text-muted-foreground">{supported} supported</span></div>}
@@ -959,37 +894,35 @@ export default function PatientDetailClient({ patient, initialDocuments, initial
                     </div>
                   )}
 
-                  {(activeBriefing.status === 'processing' || activeBriefing.status === 'queued') && (
+                  {(activeSynthesis.status === 'processing' || activeSynthesis.status === 'queued') && (
                     <div className="border border-accent/20 bg-accent-dim rounded-md px-5 py-8 text-center mb-6">
                       <div className="flex items-center justify-center gap-2 mb-2">
                         <div className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
                         <div className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" style={{animationDelay: '0.2s'}} />
                         <div className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" style={{animationDelay: '0.4s'}} />
                       </div>
-                      <p className="font-mono text-[11px] text-accent">Traversing temporal graph and synthesizing longitudinal briefing...</p>
-                      <p className="text-[11px] text-muted-foreground mt-1">This takes 15-30 seconds. Results appear automatically.</p>
+                      <p className="font-mono text-[11px] text-accent">Traversing temporal graph and synthesizing longitudinal clinical state...</p>
+                      <p className="text-[11px] text-muted-foreground mt-1">Streaming structured synthesis and binding PaperTrail citations.</p>
                     </div>
                   )}
 
-                  {activeBriefing.status === 'failed' && (
+                  {activeSynthesis.status === 'failed' && (
                     <div className="border border-alert/30 bg-alert-dim rounded-md px-4 py-3 mb-6 flex items-start justify-between gap-4">
                       <div>
-                        <p className="font-mono text-[10px] text-alert font-semibold mb-1">BRIEFING FAILED</p>
-                        <p className="text-[12px] text-foreground">{activeBriefing.error_message || 'Briefing generation encountered an issue. Please retry or delete this briefing.'}</p>
+                        <p className="font-mono text-[10px] text-alert font-semibold mb-1">SYNTHESIS FAILED</p>
+                        <p className="text-[12px] text-foreground">{activeSynthesis.error_message || 'Clinical synthesis encountered an issue. Please retry or delete this synthesis.'}</p>
                       </div>
-                      {!isDemo && (
-                        <button
-                          type="button"
-                          onClick={(e) => handleDeleteBriefing(activeBriefing.id, e)}
-                          className="font-mono text-[10px] px-2.5 py-1 rounded bg-alert text-background font-semibold hover:opacity-90 transition-opacity shrink-0"
-                        >
-                          Delete
-                        </button>
-                      )}
+                      <button
+                        type="button"
+                        onClick={(e) => handleDeleteSynthesis(activeSynthesis.id, e)}
+                        className="font-mono text-[10px] px-2.5 py-1 rounded bg-alert text-background font-semibold hover:opacity-90 transition-opacity shrink-0"
+                      >
+                        Delete
+                      </button>
                     </div>
                   )}
 
-                  {activeBriefing.briefing_text && (
+                  {activeSynthesis.synthesis_text && (
                     <div className="space-y-0">
                       {(() => {
                         const claimsMap = claimsArray.reduce<Record<string, Claim>>((acc, c) => {
@@ -1000,48 +933,41 @@ export default function PatientDetailClient({ patient, initialDocuments, initial
                         return (
                           <ReactMarkdown components={{
                             img: () => null,
-                            h2: ({ children }) => <h2 className="font-mono text-[9px] tracking-widest text-muted-foreground uppercase mt-8 mb-3 pb-2 border-b border-border">{renderContentWithClaims(children, claimsMap, handleDocClick, documents)}</h2>,
-                            p: ({ children }) => <p className="text-[13px] text-foreground leading-relaxed mb-4">{renderContentWithClaims(children, claimsMap, handleDocClick, documents)}</p>,
+                            h2: ({ children }) => <h2 className="font-mono text-[9px] tracking-widest text-muted-foreground uppercase mt-8 mb-3 pb-2 border-b border-border">{renderContentWithClaims(children, claimsMap, handleRecordClick, records)}</h2>,
+                            p: ({ children }) => <p className="text-[13px] text-foreground leading-relaxed mb-4">{renderContentWithClaims(children, claimsMap, handleRecordClick, records)}</p>,
                             li: ({ children }) => (
                               <li className="flex items-baseline gap-2 text-[13px] text-foreground mb-2">
                                 <span className="w-1 h-1 rounded-full bg-muted-foreground mt-2 shrink-0" />
-                                <span>{renderContentWithClaims(children, claimsMap, handleDocClick, documents)}</span>
+                                <span>{renderContentWithClaims(children, claimsMap, handleRecordClick, records)}</span>
                               </li>
                             ),
                             ul: ({ children }) => <ul className="list-none pl-0 my-3 space-y-0">{children}</ul>,
                             ol: ({ children }) => <ol className="list-decimal pl-5 my-3 space-y-1 text-[13px] text-foreground">{children}</ol>,
-                            strong: ({ children }) => <strong className="font-semibold text-foreground">{renderContentWithClaims(children, claimsMap, handleDocClick, documents)}</strong>,
+                            strong: ({ children }) => <strong className="font-semibold text-foreground">{renderContentWithClaims(children, claimsMap, handleRecordClick, records)}</strong>,
                             code: ({ children }) => <code className="font-mono text-[11px] bg-surface-raised border border-border px-1.5 py-0.5 rounded text-accent">{children}</code>,
-                          }}>{activeBriefing.briefing_text}</ReactMarkdown>
+                          }}>{activeSynthesis.synthesis_text}</ReactMarkdown>
                         )
                       })()}
-                    </div>
-                  )}
-
-                  {isDemo && (
-                    <div className="border-t border-border mt-8 pt-6">
-                      <p className="font-mono text-[9px] tracking-widest text-muted-foreground uppercase mb-2">This is a demo briefing</p>
-                      <p className="text-[12px] text-muted-foreground leading-relaxed">Real briefings synthesize an evolving patient graph across time. Every claim links to an exact source quote, page number, and date. <Link href="/login" className="text-accent hover:underline">Sign in</Link> to get started.</p>
                     </div>
                   )}
                 </div>
               ) : (
                 <div className="flex-1 flex items-center justify-center px-8 py-16">
                   <div className="text-center max-w-sm">
-                    <p className="font-mono text-[9px] tracking-widest text-muted-foreground uppercase mb-3">Longitudinal Briefing Not Yet Synthesized</p>
-                    <p className="text-[13px] text-muted-foreground leading-relaxed mb-4">Index clinical records into the timeline to build the patient&apos;s evolving temporal graph, then synthesize a longitudinal briefing.</p>
-                    {documents.length === 0 && (
+                    <p className="font-mono text-[9px] tracking-widest text-muted-foreground uppercase mb-3">Longitudinal Synthesis Not Yet Generated</p>
+                    <p className="text-[13px] text-muted-foreground leading-relaxed mb-4">Index clinical records into the timeline to build the patient&apos;s evolving temporal graph, then synthesize a longitudinal clinical synthesis.</p>
+                    {records.length === 0 && (
                       <button
                         type="button"
-                        onClick={() => setIsRecordsDrawerOpen(true)}
+                        onClick={() => setIsTimelineDrawerOpen(true)}
                         className="md:hidden border border-border bg-surface-raised font-mono text-[11px] px-3.5 py-2 rounded text-foreground hover:border-accent/40 transition-colors mb-3 inline-flex items-center gap-1.5 touch-manipulation"
                       >
                         <span>📄</span> Open Timeline to Index Records
                       </button>
                     )}
-                    {!isGuest && documents.length > 0 && (
-                      <button onClick={handleGenerateBriefing} disabled={generating} className="bg-accent text-background font-mono text-[11px] font-semibold px-4 py-2 rounded hover:opacity-90 transition-opacity disabled:opacity-50">
-                        {generating ? 'Traversing patient graph...' : 'Synthesize Longitudinal Briefing'}
+                    {records.length > 0 && (
+                      <button onClick={handleSynthesizePatientGraph} disabled={synthesizing} className="bg-accent text-background font-mono text-[11px] font-semibold px-4 py-2 rounded hover:opacity-90 transition-opacity disabled:opacity-50">
+                        {synthesizing ? 'Traversing patient graph...' : 'Synthesize Patient Graph'}
                       </button>
                     )}
                   </div>

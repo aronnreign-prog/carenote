@@ -1,8 +1,6 @@
 'use server'
 
 import { auth } from '@/lib/auth'
-import { db } from '@/lib/db'
-import { caregivers } from '@/lib/db/schema'
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 

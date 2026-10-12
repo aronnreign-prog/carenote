@@ -4,9 +4,9 @@ import { getSession, isAdmin } from '@/lib/auth-session'
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
 import {
-  caregivers as caregiversTable,
+  workspaces as workspacesTable,
   patients as patientsTable,
-  documents as documentsTable,
+  clinicalRecords as clinicalRecordsTable,
   demoRequests as demoRequestsTable,
 } from '@/lib/db/schema'
 import { eq, desc, inArray, count } from 'drizzle-orm'
@@ -24,16 +24,16 @@ export function computeAdminUserList(
     banReason?: string | null
     createdAt?: Date | string
   }>,
-  caregivers: Array<{ id: string; user_id: string }>,
-  patientCounts: Array<{ caregiver_id: string; count: number | string }>,
-  documentCounts: Array<{ caregiver_id: string; count: number | string }>
+  workspaces: Array<{ id: string; user_id: string }>,
+  patientCounts: Array<{ workspace_id: string; count: number | string }>,
+  recordCounts: Array<{ workspace_id: string; count: number | string }>
 ) {
-  const caregiverByUserId = new Map(caregivers.map((c) => [c.user_id, c.id]))
-  const patientCountMap = new Map(patientCounts.map((p) => [p.caregiver_id, Number(p.count)]))
-  const documentCountMap = new Map(documentCounts.map((d) => [d.caregiver_id, Number(d.count)]))
+  const workspaceByUserId = new Map(workspaces.map((w) => [w.user_id, w.id]))
+  const patientCountMap = new Map(patientCounts.map((p) => [p.workspace_id, Number(p.count)]))
+  const recordCountMap = new Map(recordCounts.map((r) => [r.workspace_id, Number(r.count)]))
 
   return authUsers.map((u) => {
-    const caregiverId = caregiverByUserId.get(u.id)
+    const workspaceId = workspaceByUserId.get(u.id)
     return {
       id: u.id,
       name: u.name,
@@ -42,8 +42,8 @@ export function computeAdminUserList(
       banned: Boolean(u.banned),
       banReason: u.banReason || null,
       createdAt: u.createdAt ? new Date(u.createdAt).toISOString() : new Date().toISOString(),
-      patientCount: caregiverId ? (patientCountMap.get(caregiverId) || 0) : 0,
-      documentCount: caregiverId ? (documentCountMap.get(caregiverId) || 0) : 0,
+      patientCount: workspaceId ? (patientCountMap.get(workspaceId) || 0) : 0,
+      indexedRecordCount: workspaceId ? (recordCountMap.get(workspaceId) || 0) : 0,
     }
   })
 }
@@ -73,15 +73,15 @@ export default async function AdminPage() {
   const userIds = authUsers.map((u) => u.id)
 
   // 2. Query workspace usage stats with bounded SQL queries and aggregation
-  const [caregivers, pendingRequestsRaw] = await Promise.all([
+  const [workspaces, pendingRequestsRaw] = await Promise.all([
     userIds.length > 0
       ? db
           .select({
-            id: caregiversTable.id,
-            user_id: caregiversTable.user_id,
+            id: workspacesTable.id,
+            user_id: workspacesTable.user_id,
           })
-          .from(caregiversTable)
-          .where(inArray(caregiversTable.user_id, userIds))
+          .from(workspacesTable)
+          .where(inArray(workspacesTable.user_id, userIds))
       : Promise.resolve([]),
 
     db
@@ -92,33 +92,33 @@ export default async function AdminPage() {
       .limit(100),
   ])
 
-  const caregiverIds = caregivers.map((c) => c.id)
+  const workspaceIds = workspaces.map((w) => w.id)
 
-  const [patientCounts, documentCounts] = await Promise.all([
-    caregiverIds.length > 0
+  const [patientCounts, recordCounts] = await Promise.all([
+    workspaceIds.length > 0
       ? db
           .select({
-            caregiver_id: patientsTable.caregiver_id,
+            workspace_id: patientsTable.workspace_id,
             count: count(patientsTable.id),
           })
           .from(patientsTable)
-          .where(inArray(patientsTable.caregiver_id, caregiverIds))
-          .groupBy(patientsTable.caregiver_id)
+          .where(inArray(patientsTable.workspace_id, workspaceIds))
+          .groupBy(patientsTable.workspace_id)
       : Promise.resolve([]),
 
-    caregiverIds.length > 0
+    workspaceIds.length > 0
       ? db
           .select({
-            caregiver_id: documentsTable.caregiver_id,
-            count: count(documentsTable.id),
+            workspace_id: clinicalRecordsTable.workspace_id,
+            count: count(clinicalRecordsTable.id),
           })
-          .from(documentsTable)
-          .where(inArray(documentsTable.caregiver_id, caregiverIds))
-          .groupBy(documentsTable.caregiver_id)
+          .from(clinicalRecordsTable)
+          .where(inArray(clinicalRecordsTable.workspace_id, workspaceIds))
+          .groupBy(clinicalRecordsTable.workspace_id)
       : Promise.resolve([]),
   ])
 
-  const userList = computeAdminUserList(authUsers, caregivers, patientCounts, documentCounts)
+  const userList = computeAdminUserList(authUsers, workspaces, patientCounts, recordCounts)
 
   const pendingRequests = (pendingRequestsRaw || []).map((r) => ({
     id: r.id,

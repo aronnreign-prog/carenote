@@ -1,18 +1,26 @@
-// Drizzle ORM
+// Drizzle ORM Domain Types
 
-export interface Patient {
+export interface ClinicalWorkspace {
   id: string
-  caregiver_id: string
+  user_id: string
+  email: string
   name: string
-  date_of_birth: string
-  relationship: string
   created_at: string | Date
 }
 
-export interface Document {
+export interface Patient {
+  id: string
+  workspace_id: string
+  name: string
+  date_of_birth: string
+  biological_sex: string
+  created_at: string | Date
+}
+
+export interface ClinicalRecord {
   id: string
   patient_id: string
-  caregiver_id: string
+  workspace_id: string
   filename: string
   blob_url?: string
   file_size?: string
@@ -25,16 +33,15 @@ export interface Document {
   error_message?: string | null
 }
 
-export interface Briefing {
+export interface ClinicalSynthesis {
   id: string
   patient_id: string
-  caregiver_id: string
-  audience: string
+  workspace_id: string
   status: string
   created_at: string | Date
   completed_at?: string | Date | null
   source_doc_ids?: unknown
-  briefing_text?: string | null
+  synthesis_text?: string | null
   claims?: unknown
   flagged_concerns?: unknown
   error_message?: string | null

@@ -1,6 +1,6 @@
 import { auth } from '@/lib/auth'
 import { db } from '@/lib/db'
-import { caregivers } from '@/lib/db/schema'
+import { workspaces } from '@/lib/db/schema'
 import { eq } from 'drizzle-orm'
 import { headers } from 'next/headers'
 import { cache } from 'react'
@@ -9,28 +9,28 @@ export const getSession = cache(async () => {
   return auth.api.getSession({ headers: await headers() })
 })
 
-export const getCaregiver = cache(async () => {
+export const getWorkspace = cache(async () => {
   const session = await getSession()
   if (!session?.user?.id) return null
-  let [caregiver] = await db
+  let [workspace] = await db
     .select()
-    .from(caregivers)
-    .where(eq(caregivers.user_id, session.user.id))
+    .from(workspaces)
+    .where(eq(workspaces.user_id, session.user.id))
     .limit(1)
 
-  if (!caregiver) {
+  if (!workspace) {
     const [created] = await db
-      .insert(caregivers)
+      .insert(workspaces)
       .values({
         user_id: session.user.id,
         email: session.user.email,
-        name: session.user.name || 'Caregiver',
+        name: session.user.name || 'Clinical Workspace',
       })
       .returning()
-    caregiver = created
+    workspace = created
   }
 
-  return caregiver ?? null
+  return workspace ?? null
 })
 
 export const isAdmin = cache(async () => {

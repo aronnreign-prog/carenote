@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 
-export default function Error({
+export default function PatientGraphError({
   error,
   reset,
 }: {
@@ -10,34 +10,34 @@ export default function Error({
   reset: () => void
 }) {
   useEffect(() => {
-    console.error('Patient page error boundary caught:', error)
+    console.error('[Patient Graph] Error boundary caught:', error)
   }, [error])
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-      <div className="max-w-md w-full bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="px-6 py-5 border-b border-gray-200 bg-gray-50/50">
-          <h2 className="text-xl font-semibold text-gray-900">Unable to load patient profile</h2>
-          <p className="text-sm text-gray-500 mt-1">
-            Something went wrong while loading this patient&apos;s information.
+    <div className="min-h-screen bg-background flex items-center justify-center px-6">
+      <div className="max-w-md w-full border border-border bg-surface rounded-xl overflow-hidden shadow-xl">
+        <div className="px-6 py-5 border-b border-border bg-surface-raised/40">
+          <h2 className="text-[16px] font-semibold text-foreground">Unable to load patient graph</h2>
+          <p className="text-[12px] text-muted-foreground mt-1">
+            An error occurred while loading this patient&apos;s temporal graph and clinical timeline.
           </p>
         </div>
         <div className="p-6 space-y-4">
-          <div className="bg-red-50 border border-red-200 rounded-md p-4">
-            <p className="text-sm text-red-800 font-mono break-words">
+          <div className="bg-alert-dim border border-alert/30 rounded-md p-3.5">
+            <p className="text-[12px] text-alert font-mono break-words">
               {error.message || 'An unexpected error occurred'}
             </p>
             {error.digest && (
-              <p className="text-xs text-red-600 mt-2 font-mono">
+              <p className="text-[10px] text-muted-foreground mt-2 font-mono">
                 Error ID: {error.digest}
               </p>
             )}
           </div>
           <button
             onClick={reset}
-            className="w-full bg-indigo-600 text-white text-sm font-semibold py-2.5 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors"
+            className="w-full bg-accent text-background font-mono text-[11px] font-semibold py-2.5 px-4 rounded-md hover:opacity-90 transition-opacity cursor-pointer"
           >
-            Try Again
+            Reload Patient Graph
           </button>
         </div>
       </div>

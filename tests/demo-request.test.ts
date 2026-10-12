@@ -10,48 +10,38 @@ const DemoRequestSchema = z.object({
   useCase: z.string().trim().max(2000, 'Use case must be 2000 characters or less').optional(),
 })
 
-import { CLINICAL_PERSONAS } from '../src/components/marketing/DemoRequestModal'
-
 describe('Demo Request Validation & Payload Bounding', () => {
-  test('accepts valid input within bounds', () => {
+  test('accepts valid full input within bounds', () => {
     const valid = {
       name: 'Dr. Jane Smith',
       email: 'jane.smith@hospital.org',
-      organization: 'General Hospital',
-      role: 'Chief Medical Officer',
-      useCase: 'Longitudinal memory for neurology patients',
+      organization: 'Department of Nephrology',
+      role: 'Attending Nephrologist',
+      useCase: 'Longitudinal clinical synthesis across multi-provider referral records and serial renal panels',
     }
 
     const res = DemoRequestSchema.safeParse(valid)
     assert.equal(res.success, true)
   })
 
-  test('validates all clinical persona role IDs conform to schema bounds', () => {
-    assert.ok(CLINICAL_PERSONAS.length >= 5)
-    for (const persona of CLINICAL_PERSONAS) {
-      assert.ok(persona.id.length > 0)
-      assert.ok(persona.id.length <= 100, `Role ${persona.id} exceeds 100 chars`)
-      const res = DemoRequestSchema.safeParse({
-        name: 'Test Clinician',
-        email: 'clinician@carenote.test',
-        role: persona.id,
-      })
-      assert.equal(res.success, true)
+  test('accepts minimal required fields (name and email only)', () => {
+    const minimal = {
+      name: 'Dr. Jane Smith',
+      email: 'jane.smith@hospital.org',
     }
+
+    const res = DemoRequestSchema.safeParse(minimal)
+    assert.equal(res.success, true)
   })
 
-  test('validates combined suggested scenario pills stay well within useCase character limits', () => {
-    for (const persona of CLINICAL_PERSONAS) {
-      const combinedPills = persona.suggestedPills.join('; ')
-      assert.ok(combinedPills.length <= 2000)
-      const res = DemoRequestSchema.safeParse({
-        name: 'Advocate User',
-        email: 'advocate@carenote.test',
-        role: persona.id,
-        useCase: combinedPills,
-      })
-      assert.equal(res.success, true)
+  test('rejects empty name after trimming whitespace', () => {
+    const emptyName = {
+      name: '   ',
+      email: 'jane.smith@hospital.org',
     }
+
+    const res = DemoRequestSchema.safeParse(emptyName)
+    assert.equal(res.success, false)
   })
 
   test('rejects oversized string payloads (memory exhaustion protection)', () => {

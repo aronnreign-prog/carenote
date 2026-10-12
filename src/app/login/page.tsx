@@ -52,7 +52,7 @@ export default function LoginPage() {
             Medical history<br />in persistent graph memory.
           </h1>
           <p className="text-[13px] text-white/60 leading-relaxed mb-12">
-            Index encounter records into an evolving patient graph. Synthesize longitudinal clinical briefings with every assertion verified by PaperTrail citations.
+            Index encounter records into an evolving patient graph. Generate longitudinal clinical syntheses with every assertion verified by PaperTrail citations.
           </p>
 
           <div className="space-y-6">
@@ -104,7 +104,7 @@ export default function LoginPage() {
 
           <div className="bg-[#0D1117] border border-[#1F2937] rounded-xl p-7 shadow-2xl">
             <h2 className="text-[20px] font-semibold text-white mb-1 tracking-tight">Sign in</h2>
-            <p className="text-[12px] text-white/50 mb-6">Access your clinical caregiving workspace.</p>
+            <p className="text-[12px] text-white/50 mb-6">Access your clinical synthesis workspace.</p>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>

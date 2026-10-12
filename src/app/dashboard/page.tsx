@@ -1,12 +1,12 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import AddPatientForm from './AddPatientForm'
+import InitializePatientGraphForm from './InitializePatientGraphForm'
 import SignOutButton from './SignOutButton'
-import DeletePatientButton from './DeletePatientButton'
+import PurgePatientGraphButton from './PurgePatientGraphButton'
 import { db } from '@/lib/db'
-import { patients as patientsTable, documents as documentsTable, briefings as briefingsTable } from '@/lib/db/schema'
+import { patients as patientsTable, clinicalRecords as clinicalRecordsTable, clinicalSyntheses as clinicalSynthesesTable } from '@/lib/db/schema'
 import { eq } from 'drizzle-orm'
-import { getSession, getCaregiver, isAdmin } from '@/lib/auth-session'
+import { getSession, getWorkspace, isAdmin } from '@/lib/auth-session'
 import { Logo } from '@/components/ui/Logo'
 
 function calcAge(dob: string) {
@@ -26,50 +26,50 @@ export default async function DashboardPage() {
     redirect('/login')
   }
 
-  const caregiver = await getCaregiver()
-  if (!caregiver?.id) {
+  const workspace = await getWorkspace()
+  if (!workspace?.id) {
     redirect('/login')
   }
 
   const isUserAdmin = await isAdmin()
 
-  const [patientRows, docRows, briefingRows] = await Promise.all([
+  const [patientRows, recordRows, synthesisRows] = await Promise.all([
     db.select({
       id: patientsTable.id,
       name: patientsTable.name,
-      relationship: patientsTable.relationship,
+      biological_sex: patientsTable.biological_sex,
       date_of_birth: patientsTable.date_of_birth,
-    }).from(patientsTable).where(eq(patientsTable.caregiver_id, caregiver.id)).orderBy(patientsTable.created_at),
+    }).from(patientsTable).where(eq(patientsTable.workspace_id, workspace.id)).orderBy(patientsTable.created_at),
 
     db.select({
-      id: documentsTable.id,
-      patient_id: documentsTable.patient_id,
-    }).from(documentsTable).where(eq(documentsTable.caregiver_id, caregiver.id)),
+      id: clinicalRecordsTable.id,
+      patient_id: clinicalRecordsTable.patient_id,
+    }).from(clinicalRecordsTable).where(eq(clinicalRecordsTable.workspace_id, workspace.id)),
 
     db.select({
-      id: briefingsTable.id,
-      patient_id: briefingsTable.patient_id,
-      status: briefingsTable.status,
-      flagged_concerns: briefingsTable.flagged_concerns,
-      created_at: briefingsTable.created_at,
-    }).from(briefingsTable).where(eq(briefingsTable.caregiver_id, caregiver.id)).orderBy(briefingsTable.created_at),
+      id: clinicalSynthesesTable.id,
+      patient_id: clinicalSynthesesTable.patient_id,
+      status: clinicalSynthesesTable.status,
+      flagged_concerns: clinicalSynthesesTable.flagged_concerns,
+      created_at: clinicalSynthesesTable.created_at,
+    }).from(clinicalSynthesesTable).where(eq(clinicalSynthesesTable.workspace_id, workspace.id)).orderBy(clinicalSynthesesTable.created_at),
   ])
 
   const patients = (patientRows || []).map((p) => {
-    const pDocs = (docRows || []).filter((d) => d.patient_id === p.id)
-    const pBriefings = (briefingRows || []).filter((b) => b.patient_id === p.id)
-    const latestBriefing = pBriefings[pBriefings.length - 1]
+    const patientRecords = (recordRows || []).filter((r) => r.patient_id === p.id)
+    const patientSyntheses = (synthesisRows || []).filter((s) => s.patient_id === p.id)
+    const latestSynthesis = patientSyntheses[patientSyntheses.length - 1]
 
     let flagCount = 0
-    if (latestBriefing?.flagged_concerns && Array.isArray(latestBriefing.flagged_concerns)) {
-      flagCount = latestBriefing.flagged_concerns.length
+    if (latestSynthesis?.flagged_concerns && Array.isArray(latestSynthesis.flagged_concerns)) {
+      flagCount = latestSynthesis.flagged_concerns.length
     }
 
     return {
       ...p,
-      docCount: pDocs.length,
+      indexedRecordCount: patientRecords.length,
       flagCount,
-      briefingStatus: latestBriefing?.status,
+      synthesisStatus: latestSynthesis?.status,
     }
   })
 
@@ -109,14 +109,14 @@ export default async function DashboardPage() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-[13px] font-medium text-white truncate">{p.name}</p>
-                  <p className="font-mono text-[10px] text-white/50">{p.relationship} · {calcAge(p.date_of_birth)}y</p>
+                  <p className="font-mono text-[10px] text-white/50">{p.biological_sex} · {calcAge(p.date_of_birth)}y</p>
                 </div>
                 {(p.flagCount ?? 0) > 0 && (
                   <div className="w-1.5 h-1.5 rounded-full bg-red-400 shrink-0" />
                 )}
               </Link>
               <div className="pr-2">
-                <DeletePatientButton patientId={p.id} patientName={p.name} />
+                <PurgePatientGraphButton patientId={p.id} patientName={p.name} />
               </div>
             </div>
           ))}
@@ -126,7 +126,7 @@ export default async function DashboardPage() {
         </div>
 
         <div className="border-t border-[#1F2937] p-4 bg-[#0A0E14]/40">
-          <AddPatientForm />
+          <InitializePatientGraphForm />
         </div>
       </aside>
 
@@ -143,7 +143,7 @@ export default async function DashboardPage() {
             </div>
             <div>
               <h1 className="text-[12px] sm:text-[13px] font-semibold text-foreground">
-                {caregiver?.name ?? 'My workspace'}
+                {workspace?.name ?? 'Clinical Workspace'}
               </h1>
               <p className="font-mono text-[9px] sm:text-[10px] text-muted-foreground mt-0.5">
                 {`${patients.length} patient graph${patients.length !== 1 ? 's' : ''}`}
@@ -179,7 +179,7 @@ export default async function DashboardPage() {
                         <div className="flex-1 min-w-0">
                           <h2 className="text-[13px] font-semibold text-white truncate">{p.name}</h2>
                           <p className="font-mono text-[10px] text-white/50 mt-0.5">
-                            {p.relationship} · DOB {p.date_of_birth} · Age {calcAge(p.date_of_birth)}
+                            {p.biological_sex} · DOB {p.date_of_birth} · Age {calcAge(p.date_of_birth)}
                           </p>
                         </div>
                       </div>
@@ -191,7 +191,7 @@ export default async function DashboardPage() {
                             <path d="M3.5 4.5h4M3.5 6.5h2.5" stroke="currentColor" strokeWidth="1" strokeLinecap="round"/>
                           </svg>
                           <span className="font-mono text-[10px] text-white/60">
-                            {p.docCount ?? 0} {p.docCount === 1 ? 'record indexed' : 'records indexed'}
+                            {p.indexedRecordCount ?? 0} {p.indexedRecordCount === 1 ? 'record indexed' : 'records indexed'}
                           </span>
                         </div>
                         {(p.flagCount ?? 0) > 0 ? (
@@ -206,31 +206,31 @@ export default async function DashboardPage() {
                           </div>
                         )}
                         <span className={`ml-auto font-mono text-[9px] px-2 py-0.5 rounded border ${
-                          p.briefingStatus === 'complete'
+                          p.synthesisStatus === 'complete'
                             ? 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10 font-medium'
-                            : (p.docCount && p.docCount > 0)
+                            : (p.indexedRecordCount && p.indexedRecordCount > 0)
                             ? 'text-accent border-accent/30 bg-accent-dim font-medium'
                             : 'text-white/40 border-white/10 bg-white/[0.02]'
                         }`}>
-                          {p.briefingStatus === 'complete'
-                            ? 'LONGITUDINAL BRIEFING READY'
-                            : (p.docCount && p.docCount > 0)
+                          {p.synthesisStatus === 'complete'
+                            ? 'LONGITUDINAL SYNTHESIS READY'
+                            : (p.indexedRecordCount && p.indexedRecordCount > 0)
                             ? 'GRAPH CONNECTED'
                             : 'AWAITING RECORDS'}
                         </span>
                       </div>
                     </div>
                     <div className="border-t border-[#1F2937] px-5 py-2.5 flex items-center justify-between bg-[#0A0E14]/30">
-                      <span className="font-mono text-[10px] text-white/50 group-hover:text-white transition-colors">Open Clinical Timeline &amp; Graph</span>
+                      <span className="font-mono text-[10px] text-white/50 group-hover:text-white transition-colors">Open Clinical Timeline &amp; Synthesis</span>
                       <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="text-white/40 group-hover:text-white group-hover:translate-x-0.5 transition-all">
                         <path d="M2.5 6h7M6 2.5l3.5 3.5L6 9.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
                       </svg>
                     </div>
                   </article>
                 </Link>
-                {/* Delete button appears on card hover */}
+                {/* Purge button appears on card hover */}
                 <div className="absolute top-2.5 right-2.5 z-10">
-                  <DeletePatientButton patientId={p.id} patientName={p.name} />
+                  <PurgePatientGraphButton patientId={p.id} patientName={p.name} />
                 </div>
               </div>
             ))}
@@ -243,9 +243,9 @@ export default async function DashboardPage() {
             )}
           </div>
 
-          {/* Mobile Add Patient Form */}
+          {/* Mobile Initialize Patient Graph Form */}
           <div className="md:hidden border border-[#1F2937] rounded-xl bg-[#0D1117] p-5 mb-8 shadow-sm">
-            <AddPatientForm />
+            <InitializePatientGraphForm />
           </div>
 
           {/* Clinical Architecture Assurance */}

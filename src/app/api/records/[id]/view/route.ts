@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-import { documents } from '@/lib/db/schema'
+import { clinicalRecords } from '@/lib/db/schema'
 import { eq, and } from 'drizzle-orm'
-import { getCaregiver } from '@/lib/auth-session'
+import { getWorkspace } from '@/lib/auth-session'
 
 export function isValidVercelBlobUrl(url: string): boolean {
   try {
@@ -22,34 +22,34 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ): Promise<Response> {
   try {
-    const caregiver = await getCaregiver()
-    if (!caregiver) {
+    const workspace = await getWorkspace()
+    if (!workspace) {
       return NextResponse.json({ error: 'Unauthorized: Authentication required.' }, { status: 401 })
     }
 
-    const { id: docId } = await params
-    if (!docId) {
-      return NextResponse.json({ error: 'Missing document ID.' }, { status: 400 })
+    const { id: recordId } = await params
+    if (!recordId) {
+      return NextResponse.json({ error: 'Missing clinical record ID.' }, { status: 400 })
     }
 
-    // Tenant-isolated query: document MUST belong to this caregiver
-    const [doc] = await db
+    // Tenant-isolated query: clinical record MUST belong to this workspace
+    const [record] = await db
       .select()
-      .from(documents)
-      .where(and(eq(documents.id, docId), eq(documents.caregiver_id, caregiver.id)))
+      .from(clinicalRecords)
+      .where(and(eq(clinicalRecords.id, recordId), eq(clinicalRecords.workspace_id, workspace.id)))
       .limit(1)
 
-    if (!doc || !doc.blob_url) {
-      return NextResponse.json({ error: 'Document not found or access denied.' }, { status: 404 })
+    if (!record || !record.blob_url) {
+      return NextResponse.json({ error: 'Clinical record not found or access denied.' }, { status: 404 })
     }
 
-    if (!isValidVercelBlobUrl(doc.blob_url)) {
-      return NextResponse.json({ error: 'Invalid document storage URL.' }, { status: 400 })
+    if (!isValidVercelBlobUrl(record.blob_url)) {
+      return NextResponse.json({ error: 'Invalid clinical record storage URL.' }, { status: 400 })
     }
 
-    const blobRes = await fetch(doc.blob_url)
+    const blobRes = await fetch(record.blob_url)
     if (!blobRes.ok || !blobRes.body) {
-      return NextResponse.json({ error: 'Failed to retrieve document from storage.' }, { status: 502 })
+      return NextResponse.json({ error: 'Failed to retrieve clinical record from storage.' }, { status: 502 })
     }
 
     return new Response(blobRes.body, {
@@ -57,7 +57,7 @@ export async function GET(
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Security-Policy': "sandbox; default-src 'none'",
-        'Content-Disposition': `inline; filename="${encodeURIComponent(doc.filename)}"`,
+        'Content-Disposition': `inline; filename="${encodeURIComponent(record.filename)}"`,
         'X-Content-Type-Options': 'nosniff',
         'Cache-Control': 'private, no-store, max-age=0',
       },

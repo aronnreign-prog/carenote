@@ -4,26 +4,26 @@ import assert from 'node:assert/strict'
 type MessageItem = { role: 'user' | 'assistant'; content: string }
 
 function constructClinicalQueryPrompt(
-  patient: { name: string; date_of_birth: string; relationship: string },
+  patient: { name: string; date_of_birth: string; biological_sex: string },
   context: string,
   question: string,
   previousTurn?: { question: string; answer: string }
 ) {
-  const patientHeader = `Patient: ${patient.name}, DOB: ${patient.date_of_birth}, Relationship: ${patient.relationship}`
+  const patientHeader = `Patient: ${patient.name}, DOB: ${patient.date_of_birth}, Biological Sex: ${patient.biological_sex}`
   const trimmedQuestion = question.trim().slice(0, 1000)
 
-  const system = `You are a clinical AI assistant answering a specific clinical question about patient ${patient.name} based ONLY on their uploaded medical records and knowledge graph.
+  const system = `You are CareNote's clinical intelligence query engine answering a specific question about patient ${patient.name} based ONLY on their temporal knowledge graph and indexed clinical records.
 
 Guidelines:
 1. Provide a direct, factual, and concise answer formatted cleanly in Markdown (with bullet points or bold text where appropriate).
-2. If this is a follow-up question (e.g., "and what about now?", "why was that stopped?"), resolve pronouns and temporal references against the prior conversation turn, but strictly ground all facts in the provided medical records.
-3. Ground every single claim strictly in the provided clinical facts and episodes. Never hallucinate.
-4. If an aspect of the question is not documented in the records, explicitly state that it is not documented in the available records.
-5. For every specific fact, medication, date, lab value, or observation asserted, embed an inline token like [claim:c1], [claim:c2].
+2. If this is a follow-up question (e.g., "and what about now?", "why was that stopped?"), resolve pronouns and temporal references against the prior conversation turn, but strictly ground all facts in the provided clinical records.
+3. Ground every single claim strictly in the provided clinical facts and chronological episodes. Pay close attention to whether a medication or condition is [ACTIVE] vs [SUPERSEDED/INVALIDATED]. Never hallucinate.
+4. If an aspect of the question is not documented in the records, explicitly state that it is not documented in the available clinical records.
+5. PaperTrail Citation Requirement: For every specific fact, medication, date, lab value, or observation asserted, embed an inline token like [claim:c1], [claim:c2].
 6. For each claim in the schema:
    - Mark flag: 'SUPPORTED', 'CONFLICTING', or 'MEDICAL_KNOWLEDGE'.
    - In the evidence array, extract source_doc_id from [doc_id: <uuid>] and source_page from [page: <number>].
-   - If citing multiple documents or chronological changes, include an evidence item for each supporting document.`
+   - If citing multiple records or chronological changes, include an evidence item for each supporting record.`
 
   const messages: MessageItem[] = []
 
@@ -47,7 +47,7 @@ Guidelines:
 }
 
 describe('Clinical Query Prompt Construction & Injection Defense', () => {
-  const mockPatient = { name: 'John Doe', date_of_birth: '1970-01-01', relationship: 'Father' }
+  const mockPatient = { name: 'John Doe', date_of_birth: '1970-01-01', biological_sex: 'Male' }
   const mockContext = '<ENTITIES>\n- Metformin 500mg\n</ENTITIES>'
 
   test('constructs clean prompt without prior turn', () => {

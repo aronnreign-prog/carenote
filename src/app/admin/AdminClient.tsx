@@ -21,7 +21,7 @@ interface UserItem {
   banReason: string | null
   createdAt: string
   patientCount: number
-  documentCount: number
+  indexedRecordCount: number
 }
 
 export interface PendingRequestItem {
@@ -105,7 +105,7 @@ export function AdminClient({ currentUserEmail, users, pendingRequests = [] }: P
     }
 
     const confirmed = window.confirm(
-      `Are you sure you want to permanently delete demo account for ${userEmail}? This will wipe their patients and documents.`
+      `Are you sure you want to permanently delete demo account for ${userEmail}? This will purge their patient graphs and clinical records.`
     )
     if (!confirmed) return
 
@@ -484,7 +484,7 @@ export function AdminClient({ currentUserEmail, users, pendingRequests = [] }: P
                           {u.patientCount}
                         </td>
                         <td className="py-3.5 px-4 text-center font-mono text-white/70">
-                          {u.documentCount}
+                          {u.indexedRecordCount}
                         </td>
                         <td className="py-3.5 px-4 text-right">
                           {isSelf ? (

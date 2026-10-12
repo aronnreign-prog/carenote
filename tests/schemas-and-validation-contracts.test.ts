@@ -1,12 +1,12 @@
 import { test, describe } from 'node:test'
 import assert from 'node:assert/strict'
-import { BriefingOutputSchema, ClinicalQueryOutputSchema } from '../src/lib/ai/schemas.js'
+import { ClinicalSynthesisSchema, ClinicalQueryOutputSchema } from '../src/lib/ai/schemas.js'
 
 describe('AI Output Schemas & Validation Contracts', () => {
-  describe('BriefingOutputSchema', () => {
-    test('successfully validates complete, rich briefing payload', () => {
-      const validBriefing = {
-        briefing_text: 'Patient presented with elevated HbA1c [claim:c1]. Metformin was initiated [claim:c2].',
+  describe('ClinicalSynthesisSchema', () => {
+    test('successfully validates complete, rich longitudinal synthesis payload', () => {
+      const validSynthesis = {
+        synthesis_text: 'Patient presented with elevated HbA1c [claim:c1]. Metformin was initiated [claim:c2].',
         claims: [
           {
             claim_id: 'c1',
@@ -45,13 +45,13 @@ describe('AI Output Schemas & Validation Contracts', () => {
         ],
       }
 
-      const parsed = BriefingOutputSchema.safeParse(validBriefing)
+      const parsed = ClinicalSynthesisSchema.safeParse(validSynthesis)
       assert.equal(parsed.success, true)
     })
 
-    test('validates valid briefing with all allowed claim types and flags', () => {
+    test('validates valid synthesis with all allowed claim types and flags', () => {
       const allVariations = {
-        briefing_text: 'Multiple claims [claim:c1][claim:c2][claim:c3][claim:c4].',
+        synthesis_text: 'Multiple claims [claim:c1][claim:c2][claim:c3][claim:c4].',
         claims: [
           {
             claim_id: 'c1',
@@ -81,22 +81,22 @@ describe('AI Output Schemas & Validation Contracts', () => {
         flagged_concerns: [],
       }
 
-      const parsed = BriefingOutputSchema.safeParse(allVariations)
+      const parsed = ClinicalSynthesisSchema.safeParse(allVariations)
       assert.equal(parsed.success, true)
     })
 
-    test('rejects briefing when briefing_text is missing', () => {
+    test('rejects synthesis when synthesis_text is missing', () => {
       const invalid = {
         claims: [],
         flagged_concerns: [],
       }
-      const parsed = BriefingOutputSchema.safeParse(invalid)
+      const parsed = ClinicalSynthesisSchema.safeParse(invalid)
       assert.equal(parsed.success, false)
     })
 
-    test('rejects briefing when claim_type is invalid enum', () => {
+    test('rejects synthesis when claim_type is invalid enum', () => {
       const invalid = {
-        briefing_text: 'Text [claim:c1]',
+        synthesis_text: 'Text [claim:c1]',
         claims: [
           {
             claim_id: 'c1',
@@ -106,13 +106,13 @@ describe('AI Output Schemas & Validation Contracts', () => {
         ],
         flagged_concerns: [],
       }
-      const parsed = BriefingOutputSchema.safeParse(invalid)
+      const parsed = ClinicalSynthesisSchema.safeParse(invalid)
       assert.equal(parsed.success, false)
     })
 
-    test('rejects briefing when flagged_concern severity is invalid', () => {
+    test('rejects synthesis when flagged_concern severity is invalid', () => {
       const invalid = {
-        briefing_text: 'Text',
+        synthesis_text: 'Text',
         claims: [],
         flagged_concerns: [
           {
@@ -122,7 +122,7 @@ describe('AI Output Schemas & Validation Contracts', () => {
           },
         ],
       }
-      const parsed = BriefingOutputSchema.safeParse(invalid)
+      const parsed = ClinicalSynthesisSchema.safeParse(invalid)
       assert.equal(parsed.success, false)
     })
   })

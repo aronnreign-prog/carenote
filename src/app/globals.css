@@ -1,8 +1,5 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@import "shadcn/tailwind.css";
-
-@custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --font-sans: var(--font-geist-sans), system-ui, sans-serif;
@@ -31,23 +28,8 @@
   --color-success:          var(--success);
   --color-success-dim:      var(--success-dim);
   --color-success-foreground: var(--success-foreground);
-  --color-card:             var(--surface);
-  --color-card-foreground:  var(--foreground);
-  --color-popover:          var(--surface-raised);
-  --color-popover-foreground: var(--foreground);
   --color-input:            var(--input);
   --color-ring:             var(--accent);
-  --color-destructive:      var(--alert);
-  --color-secondary:        var(--surface-raised);
-  --color-secondary-foreground: var(--foreground);
-  --color-sidebar:          var(--surface);
-  --color-sidebar-foreground: var(--foreground);
-  --color-sidebar-border:   var(--border);
-  --color-sidebar-ring:     var(--accent);
-  --color-sidebar-primary:  var(--accent);
-  --color-sidebar-primary-foreground: var(--accent-foreground);
-  --color-sidebar-accent:   var(--accent-dim);
-  --color-sidebar-accent-foreground: var(--accent-foreground);
 
   --radius-sm:  calc(var(--radius) * 0.6);
   --radius-md:  calc(var(--radius) * 0.8);
@@ -91,33 +73,6 @@
   --success-foreground:  oklch(0.93 0.010 155);
 
   --radius: 0.5rem;
-}
-
-/* Keep shadcn dark vars in sync */
-.dark {
-  --background:         #0A0E14;
-  --surface:            #0D1117;
-  --surface-raised:     #0F141C;
-  --border:             #1F2937;
-  --border-subtle:      rgba(255, 255, 255, 0.08);
-  --foreground:         #EDEDED;
-  --muted:              #161B22;
-  --muted-foreground:   #8B949E;
-  --input:              #0A0E14;
-  --primary:            #FFFFFF;
-  --primary-foreground: #0A0E14;
-  --accent:             oklch(0.65 0.18 250);
-  --accent-dim:         oklch(0.18 0.06 250);
-  --accent-foreground:  oklch(0.93 0.010 250);
-  --alert:              oklch(0.62 0.22 25);
-  --alert-dim:          oklch(0.16 0.07 25);
-  --alert-foreground:   oklch(0.93 0.010 25);
-  --warning:            oklch(0.75 0.18 70);
-  --warning-dim:        oklch(0.17 0.06 70);
-  --warning-foreground: oklch(0.93 0.010 70);
-  --success:            oklch(0.68 0.15 155);
-  --success-dim:        oklch(0.15 0.05 155);
-  --success-foreground: oklch(0.93 0.010 155);
 }
 
 @layer base {

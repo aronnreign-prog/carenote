@@ -5,9 +5,9 @@ import { DemoRequestModal, DemoRequestTrigger } from '@/components/marketing/Dem
 import { Logo } from '@/components/ui/Logo'
 
 export const metadata: Metadata = {
-  title: 'CareNote: Graph Memory & Verifiable PaperTrail for Medical Prescriptions and Notes',
+  title: 'CareNote: Longitudinal Clinical Memory & Verifiable PaperTrail Synthesis',
   description:
-    'Medical prescriptions and notes form an interconnected timeline, not disconnected text chunks. CareNote builds a persistent patient knowledge graph with an instant PaperTrail linking every claim to its original PDF page.',
+    'Clinical encounter records form an evolving longitudinal graph across time, not disconnected text chunks. CareNote reconciles patient records into a persistent temporal knowledge graph with a clickable PaperTrail linking every claim to its source PDF page.',
 }
 
 export default function LandingPage() {
@@ -43,7 +43,7 @@ export default function LandingPage() {
             </h1>
 
             <p className="text-[17px] sm:text-[19px] text-white/65 leading-relaxed max-w-2xl mb-8">
-              Standard AI tools chop PDFs into isolated paragraphs and forget what happened last month. CareNote connects every lab, prescription, and specialist note into a persistent patient graph with a clickable PaperTrail linking every claim to its source page.
+              Standard AI tools chop PDFs into isolated paragraphs and lose chronological state across encounters. CareNote connects every lab panel, prescription, discharge summary, and specialist consult into a persistent patient graph with a clickable PaperTrail linking every claim to its source page.
             </p>
 
             <div className="flex items-center gap-3">
@@ -61,7 +61,7 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* ━━━ Product Proof: Grounded Clinical Briefing + PaperTrail Inspector ━━━ */}
+          {/* ━━━ Product Proof: Grounded Longitudinal Clinical Synthesis + PaperTrail Inspector ━━━ */}
           <div id="proof" className="scroll-mt-20">
             <HeroClinicalProof />
           </div>
@@ -76,7 +76,7 @@ export default function LandingPage() {
               Vector databases have clinical amnesia.
             </h2>
             <p className="text-[15px] sm:text-[16px] text-white/65 leading-[1.65] max-w-[65ch]">
-              Standard AI summarizers chop a 30-page PDF into 500-token text chunks and do semantic search. When you ask about medications, the system finds matching keywords, but has no concept of timeline, dosages changing over time, or doctors countermanding each other.
+              Standard AI tools slice clinical PDFs into isolated text chunks and retrieve by cosine similarity. When you ask about medications or diagnoses, the system matches keywords without any model of chronological state transitions, dose titrations, or specialists countermanding prior orders.
             </p>
           </div>
 
@@ -85,21 +85,21 @@ export default function LandingPage() {
             <div className="border border-white/[0.08] rounded-xl bg-white/[0.01] p-6 sm:p-8 flex flex-col justify-between">
               <div>
                 <h3 className="text-[15px] font-semibold text-white/90 mb-2">
-                  How Standard AI Tools Store Prescriptions and Notes (Vector Chunks)
+                  How Standard AI Tools Store Clinical Records (Vector Chunks)
                 </h3>
                 <p className="text-[13px] text-white/60 leading-[1.6] mb-6">
-                  Documents are broken into fragments and indexed by cosine similarity. When you ask a question, it retrieves fragments that sound relevant, even if they are 3 years out of date.
+                  Encounter records are broken into stateless fragments and indexed by keyword similarity. Retrieval surfaces fragments that sound relevant even when the underlying clinical order was later discontinued or superseded.
                 </p>
 
                 <div className="p-3.5 rounded-lg bg-red-500/[0.03] border border-red-500/20 space-y-2 text-[12px] font-mono text-white/60 tabular-nums">
-                  <p className="text-red-300">&times; Chunk 14: &quot;Discontinue Lisinopril due to cough (2023)&quot;</p>
-                  <p className="text-red-300">&times; Chunk 82: &quot;Restart Lisinopril 10mg daily (2024)&quot;</p>
-                  <p className="text-red-300">&times; Chunk 105: &quot;Increase to Lisinopril 20mg daily (2025)&quot;</p>
+                  <p className="text-red-300">&times; Chunk 14: &quot;Start Lisinopril 10mg daily for hypertension (2023)&quot;</p>
+                  <p className="text-red-300">&times; Chunk 82: &quot;Stop Lisinopril due to dry cough; switch to Losartan 50mg (2024)&quot;</p>
+                  <p className="text-red-300">&times; Chunk 105: &quot;Continue Losartan 50mg daily; BP controlled (2025)&quot;</p>
                 </div>
               </div>
 
               <div className="mt-8 pt-4 border-t border-white/[0.06] text-[12px] text-red-300/90 leading-relaxed">
-                Result: Hallucinates contradictory drug lists because it cannot reason about time.
+                Result: Surfaces Lisinopril alongside Losartan because keyword similarity cannot reconcile state transitions across time.
               </div>
             </div>
 
@@ -107,20 +107,20 @@ export default function LandingPage() {
             <div className="border border-emerald-500/30 rounded-xl bg-emerald-500/[0.02] p-6 sm:p-8 flex flex-col justify-between">
               <div>
                 <h3 className="text-[15px] font-semibold text-white mb-2">
-                  How CareNote Stores Prescriptions and Notes (Patient Knowledge Graph)
+                  How CareNote Indexes Clinical Records (Bi-Temporal Knowledge Graph)
                 </h3>
                 <p className="text-[13px] text-white/70 leading-[1.6] mb-6">
-                  Extracts clinical entities (medications, doses, lab trends, and doctors) and connects them across time in a persistent temporal graph. When a drug is changed, old entries are marked superseded.
+                  Extracts structured clinical entities (medications, doses, lab panels, conditions, and clinicians) and connects them across time in a persistent temporal graph. When a regimen changes, prior edges are marked superseded.
                 </p>
 
                 <div className="p-3.5 rounded-lg bg-emerald-500/[0.03] border border-emerald-500/20 space-y-2 text-[12px] font-mono tabular-nums">
-                  <p className="text-white/40">Lisinopril 10mg (2024) → <span className="text-amber-300 font-medium">[SUPERSEDED]</span></p>
-                  <p className="text-white font-medium">Lisinopril 20mg (2025) → <span className="text-emerald-300 font-medium">[CURRENT REGIMEN]</span></p>
+                  <p className="text-white/40">Lisinopril 10mg (2023–2024) → <span className="text-amber-300 font-medium">[SUPERSEDED: Discontinued]</span></p>
+                  <p className="text-white font-medium">Losartan 50mg (2024–Present) → <span className="text-emerald-300 font-medium">[ACTIVE REGIMEN]</span></p>
                 </div>
               </div>
 
               <div className="mt-8 pt-4 border-t border-emerald-500/20 text-[12px] text-emerald-300/90 leading-relaxed">
-                Result: Maintains the true current state across years of visits and separate providers.
+                Result: Reconciles active versus superseded therapies across years of visits and separate providers.
               </div>
             </div>
           </div>
@@ -132,7 +132,7 @@ export default function LandingPage() {
         <div className="mx-auto max-w-5xl px-6">
           <div className="max-w-2xl mb-12">
             <h2 className="text-[26px] sm:text-[34px] font-semibold tracking-[-0.025em] text-white mb-3 text-balance">
-              Never trust an AI summary without a page number.
+              Never trust an AI synthesis without a page number.
             </h2>
             <p className="text-[15px] sm:text-[16px] text-white/65 leading-[1.65] max-w-[65ch]">
               In medicine, a hallucinated dosage or misattributed date carries real danger. CareNote refuses black-box generation. Every asserted fact carries a direct audit anchor.
@@ -144,7 +144,7 @@ export default function LandingPage() {
               <div className="space-y-2">
                 <div className="text-[14px] font-semibold text-white">1. Fact Extraction</div>
                 <p className="text-[13px] text-white/60 leading-[1.6]">
-                  Multimodal AI reads the PDF visually, extracting values, units, reference intervals, and physical page numbers directly from the document.
+                  Multimodal AI reads the PDF visually, extracting values, units, reference intervals, and physical page numbers directly from the clinical record.
                 </p>
               </div>
 
@@ -158,7 +158,7 @@ export default function LandingPage() {
               <div className="space-y-2">
                 <div className="text-[14px] font-semibold text-white">3. Direct Audit Trail</div>
                 <p className="text-[13px] text-white/60 leading-[1.6]">
-                  Every claim in the final briefing links directly to its source PDF. Click the citation to inspect the original doctor&apos;s note and page.
+                  Every claim in the clinical synthesis links directly to its source PDF. Click the citation to inspect the original doctor&apos;s note and page.
                 </p>
               </div>
             </div>
@@ -172,10 +172,10 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
             <div className="lg:col-span-5">
               <h2 className="text-[26px] sm:text-[34px] font-semibold tracking-[-0.025em] text-white mb-3 text-balance">
-                Query prescriptions and clinic notes in plain language.
+                Query longitudinal clinical memory in plain language.
               </h2>
               <p className="text-[15px] sm:text-[16px] text-white/65 leading-[1.65] mb-6 max-w-[50ch]">
-                Ask questions across years of accumulated medical prescriptions and notes. Receive grounded answers with direct citations back to the source documents.
+                Ask questions across accumulated clinical encounter records. Receive grounded answers with direct PaperTrail citations back to the exact source PDF page.
               </p>
 
               <div className="space-y-2.5 text-[13px] text-white/80">
@@ -183,7 +183,7 @@ export default function LandingPage() {
                   &ldquo;What medications were changed after her hospital discharge?&rdquo;
                 </div>
                 <div className="p-3 rounded-lg bg-white/[0.02] border border-white/[0.06] hover:border-white/20 transition-colors">
-                  &ldquo;How has her kidney function trended over the past 12 months?&rdquo;
+                  &ldquo;How has her renal function trended across serial lab panels?&rdquo;
                 </div>
                 <div className="p-3 rounded-lg bg-white/[0.02] border border-white/[0.06] hover:border-white/20 transition-colors">
                   &ldquo;Did cardiology and nephrology order any conflicting drugs?&rdquo;
@@ -234,7 +234,7 @@ export default function LandingPage() {
           </h2>
 
           <p className="text-[15px] sm:text-[16px] text-white/60 max-w-md mx-auto mb-8">
-            Experience how persistent graph memory and clickable page citations transform scattered medical prescriptions and notes.
+            Experience how persistent bi-temporal graph memory and clickable PaperTrail citations synthesize fragmented clinical encounter records.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">

@@ -1,38 +1,46 @@
-# Product Foundation Law: Temporal Memory Architecture
+# Product Foundation Law: Temporal Memory & Clinical Synthesis Architecture
 
 This rule is MANDATORY and PERMANENT across all coding, UI, and architectural work.
 
 ---
 
-## The Core Product Axiom
+## 1. The Core Product Axiom
 
 **Medical history is NOT a text chunk. It is an evolving graph.**
 
-CareNote exists to solve a single fundamental failure of healthcare AI:
-Standard AI tools chop PDFs into isolated text chunks, index them by semantic similarity, and suffer from clinical amnesia. They confuse a 2023 discontinued drug with a 2025 active prescription, lose chronological trajectories, and disconnect specialist orders.
+CareNote turns fragmented clinical encounter PDFs (discharge summaries, outpatient notes, multi-column lab panels, prescriptions) into a persistent, bi-temporal patient knowledge graph and produces **Longitudinal Clinical Syntheses** where every single assertion is directly verifiable against the original source record via **The PaperTrail**.
 
-CareNote stores medical facts in **temporal / longitudinal graph memory**:
-1. **Temporal Evolution**: Every medical fact (prescription, titration, discontinuation, lab baseline) is anchored in time with valid-from and valid-to boundaries.
-2. **Evolving Graph**: Facts accumulate into a single persistent patient graph across months, years, and multiple hospital networks.
-3. **Verifiable PaperTrail**: Every claim links directly to its source PDF page and exact quote.
+### Who Uses CareNote
+Anyone managing complex, multi-provider medical records over time (family caregivers, patients managing chronic or multi-system illness, independent care managers, and specialist clinicians) who needs a reconciled longitudinal clinical synthesis rather than an unverified, stateless AI summary.
 
 ---
 
-## Anti-Generic Rules for Agents
+## 2. The Two Technical Bets
 
-### Rule 1: Never Fall into "Generic Document SaaS" Thinking
-- DO NOT treat this app like Google Drive, Dropbox, or a generic PDF chat wrapper.
-- Documents are merely raw ingestion sources; the core product asset is the **Patient's Evolving Graph**.
-- Never suggest generic file-management features (e.g. "Export folder to zip", "Tag documents", "Categorize by file size").
+1. **Temporal Graph Memory Instead of Vector Chunks:**
+   Standard RAG tools chop PDFs into isolated 500-token text chunks in a vector database and retrieve by cosine similarity—suffering from **clinical amnesia**. They confuse a 2023 discontinued drug with a 2025 active prescription, lose chronological trajectories, and disconnect specialist orders. CareNote models the patient's medical history as an evolving knowledge graph where entities (medications, conditions, lab panels, providers) connect across time with explicit `valid_from` and `valid_to` boundaries (`[ACTIVE]` vs `[SUPERSEDED]`).
+2. **The PaperTrail (Zero Blind Trust):**
+   Ungrounded AI summaries are dangerous in medicine. CareNote embeds interactive source anchors (`[claim:cN]`) for every factual assertion, linking directly to the exact clinical record, page number, and verbatim quote.
 
-### Rule 2: Use Longitudinal / Temporal Clinical Vocabulary
-- Use **"Clinical Records Timeline"** instead of generic "Documents".
-- Use **"Index Clinical Record"** instead of generic "Upload File".
-- Use **"Synthesize Longitudinal Briefing"** instead of generic "Generate Document Summary".
-- Use **"Temporal Memory Query"** instead of generic "Chat with PDF".
-- Highlight chronological epochs, dose titrations, and lab trajectories in all briefing outputs.
+---
 
-### Rule 3: Zero Blind Trust (Always Enforce PaperTrail)
-- Never output an ungrounded clinical claim.
-- Every clinical fact must be verified against source document and page numbers.
-- Explicitly flag contradictions across time (e.g., Doctor A changing what Doctor B prescribed) and notable absences.
+## 3. Anti-Generic Rules for Agents
+
+### Rule 1: Never Fall into "Generic Document SaaS" or "Briefing Wrapper" Thinking
+- DO NOT treat this app like Google Drive, Dropbox, NotebookLM, or a generic PDF chat/briefing wrapper.
+- Raw PDFs are merely intake evidence; the core product asset is the **Patient's Evolving Temporal Graph** and its **Longitudinal Clinical Synthesis**.
+- Never use generic file-management or AI-wrapper tropes (e.g., "Upload files", "Document list", "Briefing doc", "Chat with PDF").
+
+### Rule 2: Enforce Clinical & Temporal Graph Vocabulary at All Levels (UI, Prompts, Types, Variables)
+- Use **"Clinical Record"** (`ClinicalRecord`, `records`) instead of generic "Document" (`Document`, `documents`).
+- Use **"Clinical Records Timeline"** (`ClinicalTimeline`) instead of generic "Document List" (`DocumentList`).
+- Use **"Index Clinical Record"** (`ClinicalRecordIndexer`, `indexClinicalRecord`) instead of generic "Upload Document" (`DocumentUploader`, `ingestDocument`).
+- Use **"Longitudinal Clinical Synthesis"** (`ClinicalSynthesis`, `syntheses`, `synthesizePatientGraph`) instead of generic "Briefing" or "Document Summary" (`Briefing`, `briefings`, `generateBriefing`).
+- Use **"Temporal Memory Query"** (`askPatientClinicalQuery`, `queryPatientMemory`) instead of generic "Chat with PDF".
+- Use **"Episode Segmentation"** (`segmentClinicalEpisodes`) instead of generic "Chunking" (`chunkDocumentEpisodes`).
+- Highlight chronological epochs, dose titrations, lab trajectories, and cross-provider regimen shifts in all clinical syntheses.
+
+### Rule 3: Zero Blind Trust & No Fluff
+- Never output an ungrounded clinical claim. Every clinical fact must be verified against source record ID and page numbers.
+- Explicitly flag contradictions across time (e.g., Doctor A countermanding Doctor B) and notable clinical absences.
+- No fake statistics, no stock quotes, no academic enum theater. Show the real mechanism.

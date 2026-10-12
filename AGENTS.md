@@ -6,7 +6,9 @@ This version has breaking changes: APIs, conventions, and file structure may all
 
 ---
 
-# Architecture: CareNote (Caregiver Briefing Tool)
+# Architecture: CareNote (Longitudinal Clinical Memory & PaperTrail Synthesis)
+
+> Read [`.agents/rules/product-foundation.md`](.agents/rules/product-foundation.md) before modifying product copy, domain models, or UI components.
 
 ## Stack
 
@@ -14,68 +16,68 @@ This version has breaking changes: APIs, conventions, and file structure may all
 Browser (React 19) → Next.js 16.2 Server Actions → Drizzle ORM + Neon (Postgres)
                             ↓                                  ↑
                     Better Auth (cookie sessions)    @vercel/blob (PDF storage)
-                            ↓ ingestDocument()
-                    Gemini 2.5 Flash (multimodal PDF → Zod schema)
+                            ↓ indexClinicalRecord()
+                    Gemini 2.5 Flash (multimodal PDF → ClinicalExtractionSchema)
                             ↓
                     Zep Cloud (graph.add: bi-temporal clinical memory)
-                            ↓ generateBriefing()
-                    Gemini 2.5 Flash (generateObject / streamObject → structured briefing)
+                            ↓ synthesizePatientGraph()
+                    Gemini 2.5 Flash (generateObject / streamObject → ClinicalSynthesisSchema)
 ```
-
-**100% TypeScript. No Python. No Docker. No Deno. No job queue. No pg_cron. No Supabase.**
 
 ## Key Files
 
 | Layer | File | Purpose |
 |---|---|---|
-| Dashboard | `src/app/dashboard/page.tsx` | Patient cards, Drizzle queries |
-| Patient Detail | `src/app/dashboard/patients/[id]/page.tsx` | Parallel doc+briefing fetch via Drizzle |
-| Client Modules | `PatientDetailClient.tsx`, `DocumentUploader.tsx`, `DocumentList.tsx`, `PipelineBar.tsx` | Deep UI modules and PDF viewing navigation |
-| Dashboard Actions | `src/app/dashboard/actions.ts` | addPatient, deletePatient, deleteDocument |
-| Pipeline Actions | `src/app/dashboard/patients/[id]/pipeline-actions.ts` | `ingestDocument()`, `generateBriefing()`, `createDocumentRecord()`, `createBriefingRecord()`, `askPatientClinicalQuery()` |
+| Product Foundation | `.agents/rules/product-foundation.md` | Authoritative product thesis, domain vocabulary, and anti-generic rules |
+| Dashboard | `src/app/dashboard/page.tsx` | Patient graph workspaces, Drizzle queries (`clinicalRecords`, `clinicalSyntheses`) |
+| Patient Detail | `src/app/dashboard/patients/[id]/page.tsx` | Parallel clinical record + synthesis fetch via Drizzle |
+| Client Modules | `PatientDetailClient.tsx`, `ClinicalRecordIndexer.tsx`, `ClinicalTimeline.tsx`, `PipelineBar.tsx` | Clinical workspace UI, record indexing, timeline inspection, and PaperTrail navigation |
+| Dashboard Actions | `src/app/dashboard/actions.ts` | `initializePatientGraph()`, `purgePatientGraph()`, `pruneClinicalRecord()`, `deleteClinicalSynthesis()` |
+| Pipeline Actions | `src/app/dashboard/patients/[id]/pipeline-actions.ts` | `indexClinicalRecord()`, `synthesizePatientGraph()`, `createClinicalRecord()`, `createSynthesisRecord()`, `askPatientClinicalQuery()` |
 | Auth Actions | `src/app/auth/actions.ts` | login, signup, logout via Better Auth |
-| Auth Config | `src/lib/auth.ts` | Better Auth instance (Drizzle adapter) |
-| Auth Session | `src/lib/auth-session.ts` | `getSession()`, `getCaregiver()`: React cache() helpers |
+| Auth Config | `src/lib/auth.ts` | Better Auth instance (Drizzle adapter + Admin plugin) |
+| Auth Session | `src/lib/auth-session.ts` | `getSession()`, `getWorkspace()`: React `cache()` helpers |
 | Auth Client | `src/lib/auth-client.ts` | Browser-side Better Auth client |
 | Auth API | `src/app/api/auth/[...all]/route.ts` | Better Auth catch-all handler |
-| Document Viewing Proxy | `src/app/api/documents/[id]/view/route.ts` | Authenticated streaming PDF proxy with CSP sandbox and MIME enforcement |
-| Briefing Stream API | `src/app/api/patients/[id]/briefings/stream/route.ts` | Server-Sent Events (SSE) streaming briefing with abortSignal cancellation |
+| Record Viewing Proxy | `src/app/api/records/[id]/view/route.ts` | Authenticated streaming PDF proxy with CSP sandbox and MIME enforcement |
+| Synthesis Stream API | `src/app/api/patients/[id]/syntheses/stream/route.ts` | Server-Sent Events (SSE) streaming clinical synthesis with `abortSignal` cancellation |
 | Upload API | `src/app/api/upload/route.ts` | Vercel Blob server-side upload handler |
-| Polling API | `src/app/api/patients/[id]/documents/route.ts` | Document status polling |
-| Polling API | `src/app/api/patients/[id]/briefings/route.ts` | Briefing status polling |
+| Polling API | `src/app/api/patients/[id]/records/route.ts` | Clinical record status polling |
+| Polling API | `src/app/api/patients/[id]/syntheses/route.ts` | Clinical synthesis status polling |
 | Demo Intake Action | `src/app/actions/demo.ts` | Public demo access intake with deduplication and bounded validation |
-| Demo Intake Modal | `src/components/marketing/DemoRequestModal.tsx` | Clinical persona-grounded intake modal with scenario chips |
-| Admin Dashboard | `src/app/admin/page.tsx` | Admin console with bounded, inArray SQL aggregation for users and metrics |
+| Demo Intake Modal | `src/components/marketing/DemoRequestModal.tsx` | Clinical workspace demo access intake modal |
+| Admin Dashboard | `src/app/admin/page.tsx` | Admin console with bounded `inArray` SQL aggregation for users and metrics |
 | Admin Actions | `src/app/admin/actions.ts` | Admin user lifecycle (create, ban, unban, delete demo users; approve/reject requests) |
-| DB Schema | `src/lib/db/schema.ts` | Drizzle table definitions (auth, caregivers, patients, documents, briefings, demo_requests) |
+| DB Schema | `src/lib/db/schema.ts` | Drizzle table definitions (`workspaces`, `patients`, `clinicalRecords`, `clinicalSyntheses`, `demoRequests`) |
 | DB Client | `src/lib/db/index.ts` | Neon serverless + Drizzle client |
 | Drizzle Config | `drizzle.config.ts` | Drizzle Kit config (push schema to Neon) |
 | AI Extraction | `src/lib/ai/extract.ts` | `extractClinicalFacts(buffer, filename)`: Gemini 2.5 Flash + Zod |
-| Zep Memory | `src/lib/zep/ingest.ts` | `ingestDocumentFacts()`, `queryPatientMemory()`: Zep Cloud V3 graph API |
+| AI Schemas | `src/lib/ai/schemas.ts` | `ClinicalSynthesisSchema` (`synthesis_text`, `claims`, `flagged_concerns`), `ClinicalQueryOutputSchema` |
+| Zep Memory | `src/lib/zep/ingest.ts` | `indexClinicalRecordFacts()`, `queryPatientMemory()`, `pruneRecordFromGraph()`, `purgePatientGraphMemory()`: Zep Cloud V3 graph API |
 | Middleware / Proxy | `src/proxy.ts` | Better Auth edge session check, normalized path canonicalization, and route gating |
 | Error Boundary | `src/app/error.tsx` | Root error UI |
-| Types | `src/types/database.ts` | Patient, Document, Briefing, ExtractedEntities |
+| Types | `src/types/database.ts` | `ClinicalWorkspace`, `Patient`, `ClinicalRecord`, `ClinicalSynthesis`, `ExtractedEntities` |
 
 ## Pipeline Flow
 
-### Document Ingestion
+### Clinical Record Indexing
 ```
 User selects PDF → @vercel/blob (client upload via /api/upload)
-DocumentUploader.tsx calls createDocumentRecord() → inserts DB row (status: "uploaded")
-DocumentUploader.tsx calls ingestDocument(documentId)   (fire-and-forget server action)
-  → fetch(doc.blob_url) to download PDF bytes (SSRF protected)
+ClinicalRecordIndexer.tsx calls createClinicalRecord() → inserts DB row (status: "uploaded")
+ClinicalRecordIndexer.tsx calls indexClinicalRecord(recordId) (fire-and-forget server action)
+  → fetch(record.blob_url) to download PDF bytes (SSRF protected)
   → extractClinicalFacts(buffer, filename)              (Gemini 2.5 Flash + Zod)
       returns { documentDate, documentType, medications, lab_values, conditions }
-  → ingestDocumentFacts(caregiverId, patientId, ...)    (Zep Cloud graph.add: { data, type: "text", userId })
-  → db.update(documents, { status: "extracted", extracted_entities, document_date, ... })
+  → indexClinicalRecordFacts(workspaceId, patientId, ...) (Zep Cloud graph.add: { data, type: "text", userId })
+  → db.update(clinicalRecords, { status: "extracted", extracted_entities, document_date, ... })
 ```
 
-### Authenticated Document Viewing
+### Authenticated Record Viewing (PaperTrail)
 ```
-User clicks document link or PaperTrail citation chip (#page=N)
-  → Navigates to /api/documents/[id]/view#page=N
-  → Verifies caregiver session via getSession() + getCaregiver()
-  → Verifies document ownership (caregiver_id matches session)
+User clicks record link or PaperTrail citation chip (#page=N)
+  → Navigates to /api/records/[id]/view#page=N
+  → Verifies workspace session via getSession() + getWorkspace()
+  → Verifies record ownership (workspace_id matches session)
   → Validates blob URL host against Vercel Blob store domain
   → Streams raw PDF bytes to client with headers:
       Content-Type: application/pdf
@@ -83,25 +85,25 @@ User clicks document link or PaperTrail citation chip (#page=N)
       X-Content-Type-Options: nosniff
 ```
 
-### Briefing Generation (Specialist Power Briefing)
+### Longitudinal Clinical Synthesis Generation
 ```
-User clicks "Generate Specialist Briefing" → createBriefingRecord() → inserts briefings row (status: "queued")
-PatientDetailClient calls generateBriefing(patientId, briefingId, 'specialist')
-  → queryPatientMemory(caregiverId, patientId, query)   (3-layer retrieval):
+User clicks "Generate Longitudinal Synthesis" → createSynthesisRecord() → inserts row (status: "queued")
+PatientDetailClient calls synthesizePatientGraph(patientId, synthesisId)
+  → queryPatientMemory(workspaceId, patientId, query)   (3-layer retrieval):
       1. Longitudinal Entity Nodes (client.graph.node.getByUserId)
       2. Chronological Episodes (client.graph.episode.getByUserId, with [doc_id] & [page] tags)
       3. Concurrent Multi-Domain Search (Promise.allSettled client.graph.search, with temporal invalidation)
-  → generateObject({ model: gemini-2.5-flash, schema: BriefingOutputSchema })
-  → db.update(briefings, { status: "complete", briefing_text, claims, flagged_concerns })
+  → generateObject({ model: gemini-2.5-flash, schema: ClinicalSynthesisSchema })
+  → db.update(clinicalSyntheses, { status: "complete", synthesis_text, claims, flagged_concerns })
 ```
 
-### Real-Time Streaming Briefing (SSE)
+### Real-Time Streaming Synthesis (SSE)
 ```
-Client opens EventSource / fetch stream to /api/patients/[id]/briefings/stream
-  → Authenticates caregiver and verifies patient ownership
+Client opens fetch stream to /api/patients/[id]/syntheses/stream
+  → Authenticates workspace and verifies patient ownership
   → Executes 3-layer Zep memory retrieval
-  → Invokes streamObject() with Gemini 2.5 Flash and abortSignal: req.signal
-  → Streams incremental briefing chunks directly to client UI
+  → Invokes streamObject() with Gemini 2.5 Flash, ClinicalSynthesisSchema, and abortSignal: req.signal
+  → Streams incremental synthesis chunks directly to client UI
   → Automatically aborts LLM execution if client disconnects
 ```
 
@@ -109,7 +111,7 @@ Client opens EventSource / fetch stream to /api/patients/[id]/briefings/stream
 ```
 User asks question in Query Tab → calls askPatientClinicalQuery(patientId, question, previousTurn?)
   → Enforces 1,000 char boundary on user question to prevent token exhaustion DoS
-  → queryPatientMemory(caregiverId, patientId, retrievalQuery) (enriched with previousTurn if follow-up)
+  → queryPatientMemory(workspaceId, patientId, retrievalQuery) (enriched with previousTurn if follow-up)
   → generateObject({ model: gemini-2.5-flash, schema: ClinicalQueryOutputSchema })
   → returns { answer, claims } with inline [claim:cN] tokens linking to source PDF page #page=N
 ```
@@ -117,21 +119,21 @@ User asks question in Query Tab → calls askPatientClinicalQuery(patientId, que
 ### Demo Request & Provisioning Pipeline
 ```
 Visitor on landing page requests access via DemoRequestModal.tsx
-  → Submits structured persona role, organization, and clinical focus
+  → Submits name, email, optional clinical role, institution, and synthesis context
   → submitDemoRequest() server action validates bounds and deduplicates pending emails
   → Stores in demo_requests table (status: "pending")
   → Admin reviews submission in /admin console
   → Admin clicks "Approve & Provision":
       - Calls Better Auth admin API auth.api.createUser() with auto-generated secure password
-      - Inserts linked caregivers record in Neon
+      - Inserts linked workspaces record in Neon
       - Updates demo_requests status to "approved"
       - Displays one-time login credentials for the admin to copy
 ```
 
 ### Status Polling
 ```
-PatientDetailClient adaptive polling → GET /api/patients/[id]/documents
-                                      GET /api/patients/[id]/briefings
+PatientDetailClient adaptive polling → GET /api/patients/[id]/records
+                                      GET /api/patients/[id]/syntheses
   → Drizzle queries return updated rows → UI updates in place
 ```
 
@@ -139,24 +141,24 @@ PatientDetailClient adaptive polling → GET /api/patients/[id]/documents
 
 - **Signup**: Gated by demo access. Direct self-service signup redirects to login or demo modal.
 - **Login**: `auth.api.signInEmail()`: sets secure HTTP-only session cookie
-- **Session**: `getSession()`: `getCaregiver()` maps Better Auth user.id to caregivers row
-- **Logout**: `auth.api.signOut()`: clears cookie: redirect to /login
+- **Session**: `getSession()`: `getWorkspace()` maps Better Auth `user.id` to `workspaces` row
+- **Logout**: `auth.api.signOut()`: clears cookie: redirect to `/login`
 - **Middleware / Proxy**: `src/proxy.ts` evaluates normalized paths, checks session, and guards routes against path traversal or evasion
 
 ## Error Handling
 
 - **Server Actions**: `{ error?: string }` return pattern: never throw unhandled exceptions to client
-- **Extraction failure**: document marked `status: "failed"`, `error_message` stored in Neon via Drizzle
-- **Briefing failure**: briefing marked `status: "failed"`, `error_message` shown inline
+- **Extraction failure**: clinical record marked `status: "failed"`, `error_message` stored in Neon via Drizzle
+- **Synthesis failure**: clinical synthesis marked `status: "failed"`, `error_message` shown inline
 - **Zep failure**: non-fatal: extraction still saved to Neon even if Zep ingest fails
 - **Client**: graceful feedback for blocking errors, inline state for recoverable
 
 ## Debugging Entry Point
 
 ```
-1. Query Neon: SELECT id, status, error_message FROM documents ORDER BY uploaded_at DESC LIMIT 5;
-2. Query Neon: SELECT id, status, error_message FROM briefings ORDER BY created_at DESC LIMIT 5;
-3. pipeline-actions.ts logs prefixed [Pipeline] and [Briefing]: check server logs
+1. Query Neon: SELECT id, status, error_message FROM clinical_records ORDER BY uploaded_at DESC LIMIT 5;
+2. Query Neon: SELECT id, status, error_message FROM clinical_syntheses ORDER BY created_at DESC LIMIT 5;
+3. pipeline-actions.ts logs prefixed [Pipeline] and [Synthesis]: check server logs
 4. Zep errors prefixed [Zep]: check server logs
 ```
 
@@ -166,9 +168,9 @@ PatientDetailClient adaptive polling → GET /api/patients/[id]/documents
 |---|---|---|
 | Next.js App | Vercel (or local) | `npm run dev` / `npm run build` |
 | Neon | neon.tech | Serverless Postgres: run `npx drizzle-kit push` to sync schema |
-| Vercel Blob | vercel.com/storage/blob | PDF storage: configure BLOB_READ_WRITE_TOKEN |
-| Better Auth | Embedded in Next.js | No separate service: /api/auth/[...all] |
-| Zep Cloud | cloud.getzep.com | User graph per caregiver+patient pair |
+| Vercel Blob | vercel.com/storage/blob | PDF storage: configure `BLOB_READ_WRITE_TOKEN` |
+| Better Auth | Embedded in Next.js | No separate service: `/api/auth/[...all]` |
+| Zep Cloud | cloud.getzep.com | User graph per workspace+patient pair |
 | Gemini | Google AI Studio | via `GOOGLE_GENERATIVE_AI_API_KEY` |
 
 ## Required Environment Variables

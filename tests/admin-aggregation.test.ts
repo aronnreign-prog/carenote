@@ -6,7 +6,7 @@ describe('Admin User List Aggregation & Memory Bounding', () => {
   const mockAuthUsers = [
     {
       id: 'user-001',
-      name: 'Alice Caregiver',
+      name: 'Alice Clinician',
       email: 'alice@example.com',
       role: 'user',
       banned: false,
@@ -33,56 +33,56 @@ describe('Admin User List Aggregation & Memory Bounding', () => {
     },
   ]
 
-  const mockCaregivers = [
-    { id: 'cg-001', user_id: 'user-001' },
-    { id: 'cg-002', user_id: 'user-002' },
+  const mockWorkspaces = [
+    { id: 'ws-001', user_id: 'user-001' },
+    { id: 'ws-002', user_id: 'user-002' },
   ]
 
   const mockPatientCounts = [
-    { caregiver_id: 'cg-001', count: 4 },
-    { caregiver_id: 'cg-002', count: 1 },
+    { workspace_id: 'ws-001', count: 4 },
+    { workspace_id: 'ws-002', count: 1 },
   ]
 
-  const mockDocumentCounts = [
-    { caregiver_id: 'cg-001', count: 18 },
-    { caregiver_id: 'cg-002', count: 0 },
+  const mockRecordCounts = [
+    { workspace_id: 'ws-001', count: 18 },
+    { workspace_id: 'ws-002', count: 0 },
   ]
 
-  test('accurately maps aggregated patient and document counts to users', () => {
+  test('accurately maps aggregated patient and clinical record counts to users', () => {
     const result = computeAdminUserList(
       mockAuthUsers,
-      mockCaregivers,
+      mockWorkspaces,
       mockPatientCounts,
-      mockDocumentCounts
+      mockRecordCounts
     )
 
     assert.equal(result.length, 3)
 
     const alice = result.find((u) => u.id === 'user-001')
     assert.ok(alice)
-    assert.equal(alice.name, 'Alice Caregiver')
+    assert.equal(alice.name, 'Alice Clinician')
     assert.equal(alice.patientCount, 4)
-    assert.equal(alice.documentCount, 18)
+    assert.equal(alice.indexedRecordCount, 18)
 
     const bob = result.find((u) => u.id === 'user-002')
     assert.ok(bob)
     assert.equal(bob.name, 'Bob Admin')
     assert.equal(bob.patientCount, 1)
-    assert.equal(bob.documentCount, 0)
+    assert.equal(bob.indexedRecordCount, 0)
   })
 
-  test('gracefully handles users with no caregiver record (defaulting counts to 0)', () => {
+  test('gracefully handles users with no workspace record (defaulting counts to 0)', () => {
     const result = computeAdminUserList(
       mockAuthUsers,
-      mockCaregivers,
+      mockWorkspaces,
       mockPatientCounts,
-      mockDocumentCounts
+      mockRecordCounts
     )
 
     const charlie = result.find((u) => u.id === 'user-003')
     assert.ok(charlie)
     assert.equal(charlie.patientCount, 0)
-    assert.equal(charlie.documentCount, 0)
+    assert.equal(charlie.indexedRecordCount, 0)
   })
 
   test('gracefully handles empty inputs across all lists', () => {
@@ -92,20 +92,20 @@ describe('Admin User List Aggregation & Memory Bounding', () => {
 
   test('handles numeric and string count representations from SQL aggregates', () => {
     const stringCounts = [
-      { caregiver_id: 'cg-001', count: '12' },
+      { workspace_id: 'ws-001', count: '12' },
     ]
-    const stringDocCounts = [
-      { caregiver_id: 'cg-001', count: '45' },
+    const stringRecordCounts = [
+      { workspace_id: 'ws-001', count: '45' },
     ]
 
     const result = computeAdminUserList(
       [mockAuthUsers[0]],
-      [mockCaregivers[0]],
+      [mockWorkspaces[0]],
       stringCounts,
-      stringDocCounts
+      stringRecordCounts
     )
 
     assert.equal(result[0].patientCount, 12)
-    assert.equal(result[0].documentCount, 45)
+    assert.equal(result[0].indexedRecordCount, 45)
   })
 })

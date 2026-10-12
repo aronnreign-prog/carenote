@@ -19,9 +19,9 @@ export default function RootError({
         <div className="w-12 h-12 rounded-full bg-alert-dim border border-alert/30 flex items-center justify-center mx-auto mb-4">
           <span className="font-mono text-lg text-alert">!</span>
         </div>
-        <h1 className="text-[16px] font-semibold text-foreground mb-2">Something went wrong</h1>
+        <h1 className="text-[16px] font-semibold text-foreground mb-2">Clinical Workspace Error</h1>
         <p className="text-[12px] text-muted-foreground mb-6 leading-relaxed">
-          An unexpected error occurred. This has been logged and we'll investigate.
+          An unexpected error occurred while rendering this workspace view.
         </p>
         <button
           onClick={reset}

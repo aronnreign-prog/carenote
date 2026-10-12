@@ -1,11 +1,11 @@
 import { streamObject } from 'ai'
 import { getClinicalModel } from '@/lib/ai/model'
-import { BriefingOutputSchema } from '@/lib/ai/schemas'
+import { ClinicalSynthesisSchema } from '@/lib/ai/schemas'
 import { queryPatientMemory } from '@/lib/zep/ingest'
 import { db } from '@/lib/db'
-import { briefings, patients } from '@/lib/db/schema'
+import { clinicalSyntheses, patients } from '@/lib/db/schema'
 import { eq, and } from 'drizzle-orm'
-import { getCaregiver } from '@/lib/auth-session'
+import { getWorkspace } from '@/lib/auth-session'
 import { NextResponse } from 'next/server'
 
 export const maxDuration = 300
@@ -13,73 +13,74 @@ export const maxDuration = 300
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id: patientId } = await params
-    const caregiver = await getCaregiver()
-    if (!caregiver) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const workspace = await getWorkspace()
+    if (!workspace) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const { briefingId } = await req.json()
-    if (!briefingId) return NextResponse.json({ error: 'Missing briefingId' }, { status: 400 })
+    const body = await req.json()
+    const targetSynthesisId = body.synthesisId
+    if (!targetSynthesisId) return NextResponse.json({ error: 'Missing synthesisId' }, { status: 400 })
 
     const [patient] = await db
       .select()
       .from(patients)
-      .where(and(eq(patients.id, patientId), eq(patients.caregiver_id, caregiver.id)))
+      .where(and(eq(patients.id, patientId), eq(patients.workspace_id, workspace.id)))
       .limit(1)
 
     if (!patient) return NextResponse.json({ error: 'Patient not found' }, { status: 404 })
 
-    const [briefing] = await db
+    const [synthesis] = await db
       .select()
-      .from(briefings)
+      .from(clinicalSyntheses)
       .where(
         and(
-          eq(briefings.id, briefingId),
-          eq(briefings.patient_id, patientId),
-          eq(briefings.caregiver_id, caregiver.id)
+          eq(clinicalSyntheses.id, targetSynthesisId),
+          eq(clinicalSyntheses.patient_id, patientId),
+          eq(clinicalSyntheses.workspace_id, workspace.id)
         )
       )
       .limit(1)
 
-    if (!briefing) {
-      return NextResponse.json({ error: 'Briefing not found or unauthorized' }, { status: 404 })
+    if (!synthesis) {
+      return NextResponse.json({ error: 'Clinical synthesis not found or unauthorized' }, { status: 404 })
     }
 
     await db
-      .update(briefings)
+      .update(clinicalSyntheses)
       .set({ status: 'processing' })
       .where(
         and(
-          eq(briefings.id, briefingId),
-          eq(briefings.patient_id, patientId),
-          eq(briefings.caregiver_id, caregiver.id)
+          eq(clinicalSyntheses.id, targetSynthesisId),
+          eq(clinicalSyntheses.patient_id, patientId),
+          eq(clinicalSyntheses.workspace_id, workspace.id)
         )
       )
 
-    const zepQuery = 'longitudinal clinical trajectory medications lab trends psychiatric management'
-    const context = await queryPatientMemory(caregiver.id, patientId, zepQuery)
+    const zepQuery = 'comprehensive longitudinal clinical trajectory medications diagnoses lab results vitals and safety flags'
+    const context = await queryPatientMemory(workspace.id, patientId, zepQuery)
 
     if (!context || context.trim().length === 0) {
       await db
-        .update(briefings)
+        .update(clinicalSyntheses)
         .set({
           status: 'failed',
-          error_message: 'No clinical facts found in graph memory. Please ensure documents are extracted.',
+          error_message: 'No clinical facts found in graph memory. Please ensure clinical records are extracted.',
         })
         .where(
           and(
-            eq(briefings.id, briefingId),
-            eq(briefings.patient_id, patientId),
-            eq(briefings.caregiver_id, caregiver.id)
+            eq(clinicalSyntheses.id, targetSynthesisId),
+            eq(clinicalSyntheses.patient_id, patientId),
+            eq(clinicalSyntheses.workspace_id, workspace.id)
           )
         )
 
       return NextResponse.json({ error: 'Clinical memory unavailable.' }, { status: 400 })
     }
 
-    const patientHeader = `Patient: ${patient.name}, DOB: ${patient.date_of_birth}, Relationship: ${patient.relationship}`
+    const patientHeader = `Patient: ${patient.name}, DOB: ${patient.date_of_birth}, Biological Sex: ${patient.biological_sex}`
     const model = getClinicalModel()
 
     const SYSTEM_PROMPT = `You are CareNote's clinical intelligence engine synthesizing an evolving longitudinal patient graph across time.
-Your purpose is to construct a rigorous longitudinal clinical briefing from the patient's temporal memory graph.
+Your purpose is to construct a rigorous Longitudinal Clinical Synthesis from the patient's temporal memory graph.
 Medical history is an evolving graph over time, not disconnected text chunks. Trace how diagnoses evolved, dose adjustments occurred, lab trajectories shifted across providers, and whether past therapies were superseded or invalidated.
 Write for a medical specialist: emphasize longitudinal trajectories, exact medication dosages, cross-doctor conflicts, clinical reasoning, and notable clinical absences.
 
@@ -100,7 +101,7 @@ Clinical Narrative Structure:
 PaperTrail Citation Requirement:
 - Embed inline claim markers like [claim:c1], [claim:c2] immediately after each factual assertion, lab value, medication dose, or concern.
 - Write individual claim tokens (e.g., [claim:c1][claim:c2]). Do NOT bundle multiple claim IDs inside a single comma-separated bracket.
-- In each claim's evidence array, cite EVERY source document and page that supports the claim (extract source_doc_id from [doc_id: <uuid>] and source_page from [page: <number>] found inside <CHRONOLOGICAL_EVIDENCE>). For longitudinal trends spanning multiple dates/visits, include an evidence entry for each supporting document across time.`
+- In each claim's evidence array, cite EVERY source clinical record and page that supports the claim (extract source_doc_id from [doc_id: <uuid>] and source_page from [page: <number>] found inside <CHRONOLOGICAL_EVIDENCE>). For longitudinal trends spanning multiple dates/visits, include an evidence entry for each supporting record across time.`
 
     const result = streamObject({
       model,
@@ -108,58 +109,56 @@ PaperTrail Citation Requirement:
       messages: [
         {
           role: 'user',
-          content: `${patientHeader}\n\nExtracted clinical facts:\n\n${context}\n\nGenerate a comprehensive specialist briefing with inline [claim:cN] citations.`,
+          content: `${patientHeader}\n\nExtracted clinical facts:\n\n${context}\n\nGenerate a comprehensive Longitudinal Clinical Synthesis with inline [claim:cN] citations.`,
         },
       ],
-      schema: BriefingOutputSchema,
+      schema: ClinicalSynthesisSchema,
       abortSignal: req.signal,
       onError: async ({ error }) => {
-        // Log full technical stack trace to server logs for developers
         const technicalError = error instanceof Error ? (error.stack || error.message) : String(error)
-        console.error('[Briefing Stream Generation Error - Developer Log]:', technicalError)
+        console.error('[Synthesis Stream Generation Error - Developer Log]:', technicalError)
 
-        // Store clean, user-friendly message for the UI
-        const userFacingMessage = 'Unable to complete briefing synthesis. Please retry in a moment.'
+        const userFacingMessage = 'Unable to complete longitudinal clinical synthesis. Please retry in a moment.'
         try {
+          await db
+            .update(clinicalSyntheses)
+            .set({
+              status: 'failed',
+              error_message: userFacingMessage,
+            })
+            .where(
+              and(
+                eq(clinicalSyntheses.id, targetSynthesisId),
+                eq(clinicalSyntheses.patient_id, patientId),
+                eq(clinicalSyntheses.workspace_id, workspace.id)
+              )
+            )
+        } catch (dbErr) {
+          console.error('[Synthesis Stream DB Error on failure update]:', dbErr)
+        }
+      },
+      onFinish: async ({ object }) => {
+        if (object) {
+          try {
+            const cleanedSynthesisText = object.synthesis_text.replace(/^[0-9]+\s+/, '').trim()
             await db
-              .update(briefings)
+              .update(clinicalSyntheses)
               .set({
-                status: 'failed',
-                error_message: userFacingMessage,
+                status: 'complete',
+                synthesis_text: cleanedSynthesisText,
+                claims: object.claims,
+                flagged_concerns: object.flagged_concerns,
+                completed_at: new Date(),
               })
               .where(
                 and(
-                  eq(briefings.id, briefingId),
-                  eq(briefings.patient_id, patientId),
-                  eq(briefings.caregiver_id, caregiver.id)
+                  eq(clinicalSyntheses.id, targetSynthesisId),
+                  eq(clinicalSyntheses.patient_id, patientId),
+                  eq(clinicalSyntheses.workspace_id, workspace.id)
                 )
               )
           } catch (dbErr) {
-            console.error('[Briefing Stream DB Error on failure update]:', dbErr)
-          }
-        },
-        onFinish: async ({ object }) => {
-          if (object) {
-            try {
-              const cleanedBriefingText = object.briefing_text.replace(/^[0-9]+\s+/, '').trim()
-              await db
-                .update(briefings)
-                .set({
-                  status: 'complete',
-                  briefing_text: cleanedBriefingText,
-                  claims: object.claims,
-                  flagged_concerns: object.flagged_concerns,
-                  completed_at: new Date(),
-                })
-                .where(
-                  and(
-                    eq(briefings.id, briefingId),
-                    eq(briefings.patient_id, patientId),
-                    eq(briefings.caregiver_id, caregiver.id)
-                  )
-                )
-          } catch (dbErr) {
-            console.error('[Briefing Stream DB Error on complete update]:', dbErr)
+            console.error('[Synthesis Stream DB Error on complete update]:', dbErr)
           }
         }
       },
@@ -173,7 +172,7 @@ PaperTrail Citation Requirement:
     })
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
-    console.error('[Briefing Stream API Error]:', message)
+    console.error('[Synthesis Stream API Error]:', message)
     return NextResponse.json({ error: message }, { status: 500 })
   }
 }

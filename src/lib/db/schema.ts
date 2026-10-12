@@ -53,9 +53,9 @@ export const verification = pgTable('verification', {
   updatedAt: timestamp('updated_at').defaultNow(),
 })
 
-export const caregivers = pgTable('caregivers', {
+export const workspaces = pgTable('workspaces', {
   id: uuid('id').defaultRandom().primaryKey(),
-  user_id: text('user_id').notNull().unique().references(() => user.id, { onDelete: 'cascade' }), // Better Auth user.id (text type)
+  user_id: text('user_id').notNull().unique().references(() => user.id, { onDelete: 'cascade' }),
   email: text('email').notNull().unique(),
   name: text('name').notNull(),
   created_at: timestamp('created_at').defaultNow().notNull(),
@@ -63,17 +63,17 @@ export const caregivers = pgTable('caregivers', {
 
 export const patients = pgTable('patients', {
   id: uuid('id').defaultRandom().primaryKey(),
-  caregiver_id: uuid('caregiver_id').notNull().references(() => caregivers.id, { onDelete: 'cascade' }),
+  workspace_id: uuid('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
   name: text('name').notNull(),
   date_of_birth: text('date_of_birth').notNull(),
-  relationship: text('relationship').notNull(),
+  biological_sex: text('biological_sex').notNull(),
   created_at: timestamp('created_at').defaultNow().notNull(),
 })
 
-export const documents = pgTable('documents', {
+export const clinicalRecords = pgTable('clinical_records', {
   id: uuid('id').defaultRandom().primaryKey(),
   patient_id: uuid('patient_id').notNull().references(() => patients.id, { onDelete: 'cascade' }),
-  caregiver_id: uuid('caregiver_id').notNull().references(() => caregivers.id, { onDelete: 'cascade' }),
+  workspace_id: uuid('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
   filename: text('filename').notNull(),
   blob_url: text('blob_url'),
   file_size: text('file_size'),
@@ -86,16 +86,15 @@ export const documents = pgTable('documents', {
   error_message: text('error_message'),
 })
 
-export const briefings = pgTable('briefings', {
+export const clinicalSyntheses = pgTable('clinical_syntheses', {
   id: uuid('id').defaultRandom().primaryKey(),
   patient_id: uuid('patient_id').notNull().references(() => patients.id, { onDelete: 'cascade' }),
-  caregiver_id: uuid('caregiver_id').notNull().references(() => caregivers.id, { onDelete: 'cascade' }),
-  audience: text('audience').notNull(),
+  workspace_id: uuid('workspace_id').notNull().references(() => workspaces.id, { onDelete: 'cascade' }),
   status: text('status').notNull().default('queued'),
   created_at: timestamp('created_at').defaultNow().notNull(),
   completed_at: timestamp('completed_at'),
   source_doc_ids: jsonb('source_doc_ids'),
-  briefing_text: text('briefing_text'),
+  synthesis_text: text('synthesis_text'),
   claims: jsonb('claims'),
   flagged_concerns: jsonb('flagged_concerns'),
   error_message: text('error_message'),
@@ -108,7 +107,7 @@ export const demoRequests = pgTable('demo_requests', {
   organization: text('organization'),
   role: text('role'),
   use_case: text('use_case'),
-  status: text('status').notNull().default('pending'), // 'pending' | 'approved' | 'rejected'
+  status: text('status').notNull().default('pending'),
   created_at: timestamp('created_at').defaultNow().notNull(),
   approved_at: timestamp('approved_at'),
   created_user_id: text('created_user_id'),

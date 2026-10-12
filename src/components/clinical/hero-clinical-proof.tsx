@@ -1,15 +1,15 @@
 'use client'
 
 import React, { useState } from 'react'
-import type { Document } from '@/types/database'
+import type { ClinicalRecord } from '@/types/database'
 import type { Claim, FlaggedConcern } from './types'
 import { FlaggedBanner } from './flagged-banner'
 
-const MARGARET_DOCUMENTS: Document[] = [
+const MARGARET_CLINICAL_RECORDS: ClinicalRecord[] = [
   {
     id: 'd1',
     patient_id: 'demo-1',
-    caregiver_id: 'demo',
+    workspace_id: 'demo',
     filename: 'Lab Result Mar 2024.pdf',
     document_type: 'Lab Result',
     document_date: '2024-03-14',
@@ -19,7 +19,7 @@ const MARGARET_DOCUMENTS: Document[] = [
   {
     id: 'd2',
     patient_id: 'demo-1',
-    caregiver_id: 'demo',
+    workspace_id: 'demo',
     filename: 'Cardiology Visit Notes.pdf',
     document_type: 'Clinic Note',
     document_date: '2024-03-11',
@@ -29,7 +29,7 @@ const MARGARET_DOCUMENTS: Document[] = [
   {
     id: 'd3',
     patient_id: 'demo-1',
-    caregiver_id: 'demo',
+    workspace_id: 'demo',
     filename: 'Lab Result Sep 2023.pdf',
     document_type: 'Lab Result',
     document_date: '2023-09-05',
@@ -41,34 +41,34 @@ const MARGARET_DOCUMENTS: Document[] = [
 const MARGARET_CLAIMS: Record<string, Claim> = {
   c1: {
     claim_id: 'c1',
-    claim_text: 'GFR has fallen from 65 to 47 mL/min/1.73m2',
+    claim_text: 'eGFR declined acutely from 65 to 38 mL/min/1.73m2 with Serum Potassium 5.6 mEq/L',
     claim_type: 'source_document',
     flag: 'SUPPORTED',
     evidence: {
       source_doc_id: 'd1',
-      source_quote: 'eGFR 47 mL/min/1.73m2 [LOW] (ref: >60 mL/min)',
+      source_quote: 'eGFR 38 mL/min/1.73m2 [LOW] | Serum Potassium 5.6 mEq/L [HIGH] (ref: 3.5-5.0)',
       source_page: 1,
     },
   },
   c2: {
     claim_id: 'c2',
-    claim_text: 'Lisinopril 10 mg daily - NEW prescribed 2024-03-14',
+    claim_text: 'Lisinopril 20 mg daily - NEW prescribed 2024-03-11',
     claim_type: 'source_document',
     flag: 'SUPPORTED',
     evidence: {
       source_doc_id: 'd2',
-      source_quote: 'Rx: Lisinopril 10mg PO QD for blood pressure optimization',
+      source_quote: 'Rx: Lisinopril 20mg PO QD for blood pressure optimization',
       source_page: 2,
     },
   },
   c3: {
     claim_id: 'c3',
-    claim_text: 'ACE inhibitors reduce renal perfusion pressure and exacerbate acute renal decline',
+    claim_text: 'ACE inhibitor initiation during acute eGFR decline (>30% drop) and hyperkalemia (K+ >5.5 mEq/L) risks severe hyperkalemia and acute kidney injury',
     claim_type: 'medical_knowledge',
     flag: 'MEDICAL_KNOWLEDGE',
     evidence: {
       entry_text:
-        'Clinical pharmacology consensus: ACE inhibitors (Lisinopril) reduce glomerular efferent arteriolar tone, precipitating acute kidney injury when eGFR <50.',
+        'Clinical pharmacology consensus: Initiating or up-titrating ACE inhibitors (Lisinopril) during an acute >30% eGFR drop with baseline hyperkalemia (K+ 5.6 mEq/L) impairs glomerular efferent autoregulation and potassium excretion.',
     },
   },
   c4: {
@@ -98,7 +98,7 @@ const MARGARET_CLAIMS: Record<string, Claim> = {
 const MARGARET_CONCERNS: FlaggedConcern[] = [
   {
     severity: 'high',
-    concern: 'ACE inhibitor (Lisinopril) prescribed despite declining renal function (eGFR 47).',
+    concern: 'ACE inhibitor (Lisinopril 20 mg) initiated despite acute eGFR drop (65 → 38 mL/min) and hyperkalemia (K+ 5.6 mEq/L) on outside renal panel.',
   },
 ]
 
@@ -109,8 +109,8 @@ export function HeroClinicalProof() {
   const evidence = Array.isArray(selectedClaim.evidence)
     ? selectedClaim.evidence[0]
     : selectedClaim.evidence
-  const sourceDoc = evidence?.source_doc_id
-    ? MARGARET_DOCUMENTS.find((d) => d.id === evidence.source_doc_id)
+  const sourceRecord = evidence?.source_doc_id
+    ? MARGARET_CLINICAL_RECORDS.find((r) => r.id === evidence.source_doc_id)
     : undefined
 
   const handleSelectClaim = (id: string) => {
@@ -127,7 +127,7 @@ export function HeroClinicalProof() {
           </div>
           <div>
             <span className="text-white font-semibold">Margaret Thompson</span>
-            <span className="font-mono text-[10px] text-slate-400 ml-2">79y · DOB 1945-03-12 · 3 Prescriptions &amp; Notes Indexed</span>
+            <span className="font-mono text-[10px] text-slate-400 ml-2">79y · DOB 1945-03-12 · 3 Clinical Records Indexed</span>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -142,12 +142,12 @@ export function HeroClinicalProof() {
 
       {/* Main Verification Canvas */}
       <div className="grid grid-cols-1 lg:grid-cols-12 divide-y lg:divide-y-0 lg:divide-x divide-[#1F2937]">
-        {/* Left Column: Briefing Narrative & Regimen */}
+        {/* Left Column: Longitudinal Synthesis Narrative & Regimen */}
         <div className="lg:col-span-7 p-5 sm:p-6 space-y-6 bg-[#0D1117]">
           <div>
             <div className="flex items-center justify-between mb-2">
               <h3 className="font-mono text-[10px] tracking-widest text-slate-400 uppercase">
-                Clinical Synthesis · Generated Briefing
+                Longitudinal Clinical Synthesis · PaperTrail Verified
               </h3>
               <span className="font-mono text-[9px] text-slate-500">
                 Click any citation to verify
@@ -155,8 +155,8 @@ export function HeroClinicalProof() {
             </div>
 
             <p className="text-[13px] text-slate-200 leading-relaxed mb-3">
-              Margaret Thompson presents with active renal compromise documented across serial lab draws, with kidney filtration declining to{' '}
-              <strong className="text-white font-medium">eGFR 47 mL/min</strong>{' '}
+              Margaret Thompson presents with acute renal decline and hyperkalemia documented across serial lab draws, with filtration dropping from 65 to{' '}
+              <strong className="text-white font-medium">eGFR 38 mL/min and K+ 5.6 mEq/L</strong>{' '}
               <button
                 type="button"
                 onClick={() => handleSelectClaim('c1')}
@@ -173,8 +173,8 @@ export function HeroClinicalProof() {
             </p>
 
             <p className="text-[13px] text-slate-200 leading-relaxed">
-              Her outpatient cardiologist initiated{' '}
-              <strong className="text-white font-medium">Lisinopril 10 mg daily</strong>{' '}
+              Outpatient cardiology initiated{' '}
+              <strong className="text-white font-medium">Lisinopril 20 mg daily</strong>{' '}
               <button
                 type="button"
                 onClick={() => handleSelectClaim('c2')}
@@ -187,7 +187,7 @@ export function HeroClinicalProof() {
               >
                 ↗ Clinic Note · 11 Mar 24 · p.2
               </button>
-              , an ACE inhibitor that is pharmacologically contraindicated in declining renal function{' '}
+              , an ACE inhibitor contraindicated in the setting of acute eGFR decline and hyperkalemia{' '}
               <button
                 type="button"
                 onClick={() => handleSelectClaim('c3')}
@@ -227,7 +227,7 @@ export function HeroClinicalProof() {
                   <span className="font-mono text-[9px] px-1.5 py-0.5 rounded bg-teal-500/20 text-teal-300 font-semibold border border-teal-500/30">
                     NEW
                   </span>
-                  <span className="text-[12px] text-white truncate">Lisinopril 10 mg daily</span>
+                  <span className="text-[12px] text-white truncate">Lisinopril 20 mg daily</span>
                 </div>
                 <span className="font-mono text-[10px] text-teal-400 shrink-0">
                   ↗ Clinic Note · p.2
@@ -294,15 +294,15 @@ export function HeroClinicalProof() {
               </span>
             </div>
 
-            {sourceDoc ? (
+            {sourceRecord ? (
               <div className="border border-[#1F2937] rounded-lg bg-[#0D1117] p-4 space-y-3.5 shadow-sm">
                 <div className="border-b border-[#1F2937] pb-2.5 flex items-center justify-between">
                   <div className="min-w-0">
                     <p className="text-[12px] font-semibold text-white truncate">
-                      {sourceDoc.filename}
+                      {sourceRecord.filename}
                     </p>
                     <p className="font-mono text-[10px] text-slate-400">
-                      {sourceDoc.document_type} · {sourceDoc.document_date}
+                      {sourceRecord.document_type} · {sourceRecord.document_date}
                     </p>
                   </div>
                   {evidence?.source_page && (
@@ -314,7 +314,7 @@ export function HeroClinicalProof() {
 
                 <div>
                   <p className="font-mono text-[9px] text-slate-400 uppercase tracking-wider mb-1">
-                    Verbatim Document Excerpt:
+                    Verbatim Record Excerpt:
                   </p>
                   <blockquote className="p-3 rounded-md border border-teal-500/30 bg-teal-500/5 font-mono text-[11px] text-slate-200">
                     &ldquo;{evidence?.source_quote || selectedClaim.claim_text}&rdquo;
