@@ -88,18 +88,18 @@ export default function LandingPage() {
                   How Standard AI Tools Store Clinical Records (Vector Chunks)
                 </h3>
                 <p className="text-[13px] text-white/60 leading-[1.6] mb-6">
-                  Encounter records are broken into stateless fragments and indexed by keyword similarity. Retrieval surfaces fragments that sound relevant even when the underlying clinical order was later discontinued or superseded.
+                  Encounter records are broken into stateless fragments and indexed by keyword similarity. Retrieval repeats copy-pasted problem list labels (&ldquo;chart lore&rdquo;) and treats iatrogenic prescribing cascades as independent chronic conditions.
                 </p>
 
                 <div className="p-3.5 rounded-lg bg-red-500/[0.03] border border-red-500/20 space-y-2 text-[12px] font-mono text-white/60 tabular-nums">
-                  <p className="text-red-300">&times; Chunk 14: &quot;Start Lisinopril 10mg daily for hypertension (2023)&quot;</p>
-                  <p className="text-red-300">&times; Chunk 82: &quot;Stop Lisinopril due to dry cough; switch to Losartan 50mg (2024)&quot;</p>
-                  <p className="text-red-300">&times; Chunk 105: &quot;Continue Losartan 50mg daily; BP controlled (2025)&quot;</p>
+                  <p className="text-red-300">&times; Chunk 19 (Urgent Care): &quot;Pedal edema: suspect HFpEF; start Furosemide 40mg&quot;</p>
+                  <p className="text-red-300">&times; Chunk 44 (Discharge): &quot;PMH: HFpEF. K+ 3.1; start KCl 20mEq. Hold Empagliflozin&quot;</p>
+                  <p className="text-red-300">&times; Chunk 61 (Echo PDF): &quot;LVEF 62%, NT-proBNP 58 pg/mL: no heart failure&quot;</p>
                 </div>
               </div>
 
               <div className="mt-8 pt-4 border-t border-white/[0.06] text-[12px] text-red-300/90 leading-relaxed">
-                Result: Surfaces Lisinopril alongside Losartan because keyword similarity cannot reconcile state transitions across time.
+                Result: Affirms copy-forwarded &ldquo;HFpEF&rdquo; chart lore, misses that Furosemide and KCl were triggered by Amlodipine edema, and drops the conditional Empagliflozin hold.
               </div>
             </div>
 
@@ -110,17 +110,18 @@ export default function LandingPage() {
                   How CareNote Indexes Clinical Records (Bi-Temporal Knowledge Graph)
                 </h3>
                 <p className="text-[13px] text-white/70 leading-[1.6] mb-6">
-                  Extracts structured clinical entities (medications, doses, lab panels, conditions, and clinicians) and connects them across time in a persistent temporal graph. When a regimen changes, prior edges are marked superseded.
+                  Aligns causal and epistemic edges across encounters and specialties. Links drug initiations to downstream symptoms, verifies copied diagnoses against primary diagnostic reports, and tracks conditional holds until closure.
                 </p>
 
                 <div className="p-3.5 rounded-lg bg-emerald-500/[0.03] border border-emerald-500/20 space-y-2 text-[12px] font-mono tabular-nums">
-                  <p className="text-white/40">Lisinopril 10mg (2023–2024) → <span className="text-amber-300 font-medium">[SUPERSEDED: Discontinued]</span></p>
-                  <p className="text-white font-medium">Losartan 50mg (2024–Present) → <span className="text-emerald-300 font-medium">[ACTIVE REGIMEN]</span></p>
+                  <p className="text-white/80">Amlodipine 10mg → Edema → Furosemide → KCl → <span className="text-amber-300 font-medium">[PRESCRIBING CASCADE]</span></p>
+                  <p className="text-white/80">&quot;HFpEF&quot; Label vs. Normal Echo/BNP (#p.2) → <span className="text-amber-300 font-medium">[⚡ CHART LORE REFUTED]</span></p>
+                  <p className="text-white font-medium">Empagliflozin 10mg (Cr 1.12 &lt; 1.2 threshold met) → <span className="text-purple-300 font-medium">[∅ UNCLOSED HOLD]</span></p>
                 </div>
               </div>
 
               <div className="mt-8 pt-4 border-t border-emerald-500/20 text-[12px] text-emerald-300/90 leading-relaxed">
-                Result: Reconciles active versus superseded therapies across years of visits and separate providers.
+                Result: Exposes the 3-drug iatrogenic cascade, refutes unverified chart lore via page-level Echo provenance, and surfaces the unclosed post-discharge hold.
               </div>
             </div>
           </div>
@@ -180,43 +181,61 @@ export default function LandingPage() {
 
               <div className="space-y-2.5 text-[13px] text-white/80">
                 <div className="p-3 rounded-lg bg-white/[0.02] border border-white/[0.06] hover:border-white/20 transition-colors">
-                  &ldquo;What medications were changed after her hospital discharge?&rdquo;
+                  &ldquo;Why was Furosemide started, and did the echocardiogram ever confirm heart failure?&rdquo;
                 </div>
                 <div className="p-3 rounded-lg bg-white/[0.02] border border-white/[0.06] hover:border-white/20 transition-colors">
-                  &ldquo;How has her renal function trended across serial lab panels?&rdquo;
+                  &ldquo;Is there a prescribing cascade behind his Jan 2025 AKI and potassium supplement?&rdquo;
                 </div>
                 <div className="p-3 rounded-lg bg-white/[0.02] border border-white/[0.06] hover:border-white/20 transition-colors">
-                  &ldquo;Did cardiology and nephrology order any conflicting drugs?&rdquo;
+                  &ldquo;Were any home medications held during admission that meet criteria to resume?&rdquo;
                 </div>
               </div>
             </div>
 
             <div className="lg:col-span-7 border border-white/[0.08] rounded-xl bg-[#0F141C] p-6">
               <div className="pb-3 border-b border-white/[0.08] mb-4 text-[11px] text-white/50 font-semibold flex items-center justify-between">
-                <span>Clinical Query Output</span>
+                <span>Clinical Query Output · Patient R.K.</span>
                 <span className="text-emerald-400">Source-Grounded</span>
               </div>
 
               <div className="space-y-3 text-[12px]">
                 <div className="p-2.5 rounded bg-white/[0.02] border border-white/[0.06] text-white/50 font-mono text-[11px]">
-                  User: &quot;What changed after the hospital discharge?&quot;
+                  User: &quot;Why was Furosemide started, and did the echo confirm heart failure?&quot;
                 </div>
                 <div className="p-4 rounded bg-black/20 border border-white/[0.06] space-y-2.5 leading-relaxed">
                   <p className="text-white font-medium">
-                    Two changes documented following the March 2025 discharge:
+                    No. Echocardiography ruled out heart failure; Furosemide was initiated in a prescribing cascade:
                   </p>
                   <ul className="space-y-2 list-disc pl-4 text-white/80">
                     <li>
-                      <span className="text-white font-medium">Lisinopril</span> increased from 10mg to 20mg Daily.{' '}
+                      <span className="text-white font-medium">Cascade Origin:</span> Bilateral ankle edema began 5 weeks after starting{' '}
+                      <span className="text-white font-medium">Amlodipine 10 mg daily</span>{' '}
                       <span className="font-mono text-[10px] bg-white/10 text-white/90 px-1 py-0.5 rounded border border-white/15">
-                        Discharge_Summary.pdf #p.3
+                        PCP_Annual_Oct2024.pdf #p.2
                       </span>
+                      , and Urgent Care started <span className="text-white font-medium">Furosemide 40 mg</span> for suspected &ldquo;HFpEF&rdquo;{' '}
+                      <span className="font-mono text-[10px] bg-white/10 text-white/90 px-1 py-0.5 rounded border border-white/15">
+                        UrgentCare_Nov2024.pdf #p.1
+                      </span>
+                      .
                     </li>
                     <li>
-                      <span className="text-white font-medium">Furosemide</span> discontinued due to resolved edema.{' '}
-                      <span className="font-mono text-[10px] bg-white/10 text-white/90 px-1 py-0.5 rounded border border-white/15">
-                        Cardio_Followup.pdf #p.1
+                      <span className="text-white font-medium">Chart Lore Refuted:</span> Confirmatory TTE &amp; biomarker 6 days later showed <span className="text-white font-medium">LVEF 62%, normal diastolic filling, and NT-proBNP 58 pg/mL</span> (no heart failure){' '}
+                      <span className="font-mono text-[10px] bg-amber-500/20 text-amber-300 px-1 py-0.5 rounded border border-amber-500/30">
+                        ⚡ Echo_Cardio_Nov2024.pdf #p.2
                       </span>
+                      .
+                    </li>
+                    <li>
+                      <span className="text-white font-medium">Unclosed Hold:</span> Subsequent diuretic-induced AKI prompted a temporary hold on <span className="text-white font-medium">Empagliflozin 10 mg</span> until Cr &lt;1.2 mg/dL{' '}
+                      <span className="font-mono text-[10px] bg-white/10 text-white/90 px-1 py-0.5 rounded border border-white/15">
+                        Hospital_Discharge_Jan2025.pdf #p.3
+                      </span>
+                      ; Cr recovered to <span className="text-white font-medium">1.12 mg/dL</span> in March 2025 without resumption{' '}
+                      <span className="font-mono text-[10px] bg-purple-500/20 text-purple-300 px-1 py-0.5 rounded border border-purple-500/30">
+                        ∅ Outpatient_Labs_Mar2025.pdf #p.1
+                      </span>
+                      .
                     </li>
                   </ul>
                 </div>
