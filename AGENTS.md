@@ -8,7 +8,7 @@ This version has breaking changes: APIs, conventions, and file structure may all
 
 # Architecture: CareNote (Longitudinal Clinical Memory & PaperTrail Synthesis)
 
-> Read [`.agents/rules/product.md`](.agents/rules/product.md) before modifying product copy, domain models, or UI components.
+@[.agents/rules/product.md](.agents/rules/product.md)
 
 ## Stack
 

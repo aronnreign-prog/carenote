@@ -6,6 +6,7 @@ import { eq, and } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { purgePatientGraphMemory, pruneRecordFromGraph } from '@/lib/zep/ingest'
 import { getWorkspace } from '@/lib/auth-session'
+import { isValidUUID } from '@/lib/validators'
 import { del } from '@vercel/blob'
 
 export async function initializePatientGraph(formData: FormData): Promise<{ error?: string }> {
@@ -13,9 +14,20 @@ export async function initializePatientGraph(formData: FormData): Promise<{ erro
     const workspace = await getWorkspace()
     if (!workspace) return { error: 'Unauthorized' }
 
-    const name = formData.get('name') as string
-    const date_of_birth = formData.get('date_of_birth') as string
-    const biological_sex = (formData.get('biological_sex') as string) || 'Unspecified'
+    const rawName = formData.get('name')
+    const rawDob = formData.get('date_of_birth')
+    const rawSex = formData.get('biological_sex')
+
+    const name = typeof rawName === 'string' ? rawName.trim() : ''
+    const date_of_birth = typeof rawDob === 'string' ? rawDob.trim() : ''
+    const biological_sex = (typeof rawSex === 'string' && rawSex.trim()) ? rawSex.trim().slice(0, 50) : 'Unspecified'
+
+    if (!name || name.length > 200) {
+      return { error: 'Patient name is required and must be 200 characters or fewer.' }
+    }
+    if (!date_of_birth || date_of_birth.length > 50) {
+      return { error: 'Patient date of birth is required.' }
+    }
 
     await db.insert(patients).values({ workspace_id: workspace.id, name, date_of_birth, biological_sex })
     revalidatePath('/dashboard')
@@ -26,6 +38,7 @@ export async function initializePatientGraph(formData: FormData): Promise<{ erro
 }
 
 export async function purgePatientGraph(patientId: string): Promise<{ error?: string }> {
+  if (!isValidUUID(patientId)) return { error: 'Invalid patient ID.' }
   const workspace = await getWorkspace()
   if (!workspace) return { error: 'Unauthorized' }
 
@@ -55,6 +68,9 @@ export async function purgePatientGraph(patientId: string): Promise<{ error?: st
 }
 
 export async function pruneClinicalRecord(patientId: string, recordId: string): Promise<{ error?: string }> {
+  if (!isValidUUID(patientId) || !isValidUUID(recordId)) {
+    return { error: 'Invalid clinical record or patient ID.' }
+  }
   const workspace = await getWorkspace()
   if (!workspace) return { error: 'Unauthorized' }
 
@@ -67,7 +83,7 @@ export async function pruneClinicalRecord(patientId: string, recordId: string): 
 
   await db
     .delete(clinicalRecords)
-    .where(and(eq(clinicalRecords.id, recordId), eq(clinicalRecords.workspace_id, workspace.id)))
+    .where(and(eq(clinicalRecords.id, recordId), eq(clinicalRecords.patient_id, patientId), eq(clinicalRecords.workspace_id, workspace.id)))
 
   if (record.blob_url) {
     await del(record.blob_url).catch(() => {})
@@ -83,6 +99,9 @@ export async function pruneClinicalRecord(patientId: string, recordId: string): 
 }
 
 export async function deleteClinicalSynthesis(patientId: string, synthesisId: string): Promise<{ error?: string }> {
+  if (!isValidUUID(patientId) || !isValidUUID(synthesisId)) {
+    return { error: 'Invalid clinical synthesis or patient ID.' }
+  }
   const workspace = await getWorkspace()
   if (!workspace) return { error: 'Unauthorized' }
 

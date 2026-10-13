@@ -6,6 +6,7 @@ import { db } from '@/lib/db'
 import { clinicalSyntheses, patients } from '@/lib/db/schema'
 import { eq, and } from 'drizzle-orm'
 import { getWorkspace } from '@/lib/auth-session'
+import { isValidUUID } from '@/lib/validators'
 import { NextResponse } from 'next/server'
 
 export const maxDuration = 300
@@ -13,12 +14,13 @@ export const maxDuration = 300
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id: patientId } = await params
+    if (!isValidUUID(patientId)) return NextResponse.json({ error: 'Invalid patient ID' }, { status: 400 })
     const workspace = await getWorkspace()
     if (!workspace) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const body = await req.json()
     const targetSynthesisId = body.synthesisId
-    if (!targetSynthesisId) return NextResponse.json({ error: 'Missing synthesisId' }, { status: 400 })
+    if (!isValidUUID(targetSynthesisId)) return NextResponse.json({ error: 'Invalid or missing synthesisId' }, { status: 400 })
 
     const [patient] = await db
       .select()

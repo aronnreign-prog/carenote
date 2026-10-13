@@ -3,6 +3,7 @@ import { db } from '@/lib/db'
 import { clinicalRecords } from '@/lib/db/schema'
 import { eq, and } from 'drizzle-orm'
 import { getWorkspace } from '@/lib/auth-session'
+import { isValidUUID } from '@/lib/validators'
 
 export function isValidVercelBlobUrl(url: string): boolean {
   try {
@@ -28,8 +29,8 @@ export async function GET(
     }
 
     const { id: recordId } = await params
-    if (!recordId) {
-      return NextResponse.json({ error: 'Missing clinical record ID.' }, { status: 400 })
+    if (!isValidUUID(recordId)) {
+      return NextResponse.json({ error: 'Invalid clinical record ID.' }, { status: 400 })
     }
 
     // Tenant-isolated query: clinical record MUST belong to this workspace

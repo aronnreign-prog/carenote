@@ -121,36 +121,57 @@ export function segmentClinicalEpisodes(
   let currentSegment: string[] = []
   let currentLength = 0
 
+  const flushParagraphSegment = () => {
+    if (currentSegment.length === 0) return
+    const body = currentSegment.join('\n\n')
+    episodeSegments.push(episodeSegments.length === 0 ? body : `${continuationHeader}\n\n${body}`)
+    currentSegment = []
+    currentLength = 0
+  }
+
   for (const paragraph of paragraphs) {
     if (paragraph.length > maxSegmentLength) {
-      // Split oversized paragraph along line boundaries
+      flushParagraphSegment()
       const lines = paragraph.split('\n')
-      for (const line of lines) {
-        if (currentLength + line.length + 1 > maxSegmentLength && currentSegment.length > 0) {
-          const body = currentSegment.join('\n')
-          episodeSegments.push(episodeSegments.length === 0 ? body : `${continuationHeader}\n\n${body}`)
-          currentSegment = []
-          currentLength = 0
-        }
-        currentSegment.push(line)
-        currentLength += line.length + 1
-      }
-    } else {
-      if (currentLength + paragraph.length + 2 > maxSegmentLength && currentSegment.length > 0) {
-        const body = currentSegment.join('\n\n')
+      let lineSegment: string[] = []
+      let lineLength = 0
+
+      const flushLineSegment = () => {
+        if (lineSegment.length === 0) return
+        const body = lineSegment.join('\n')
         episodeSegments.push(episodeSegments.length === 0 ? body : `${continuationHeader}\n\n${body}`)
-        currentSegment = []
-        currentLength = 0
+        lineSegment = []
+        lineLength = 0
       }
+
+      for (const line of lines) {
+        if (line.length > maxSegmentLength) {
+          flushLineSegment()
+          for (let offset = 0; offset < line.length; offset += maxSegmentLength) {
+            const slice = line.slice(offset, offset + maxSegmentLength)
+            episodeSegments.push(episodeSegments.length === 0 ? slice : `${continuationHeader}\n\n${slice}`)
+          }
+          continue
+        }
+
+        if (lineLength + line.length + (lineSegment.length > 0 ? 1 : 0) > maxSegmentLength && lineSegment.length > 0) {
+          flushLineSegment()
+        }
+        lineLength += line.length + (lineSegment.length > 0 ? 1 : 0)
+        lineSegment.push(line)
+      }
+
+      flushLineSegment()
+    } else {
+      if (currentLength + paragraph.length + (currentSegment.length > 0 ? 2 : 0) > maxSegmentLength && currentSegment.length > 0) {
+        flushParagraphSegment()
+      }
+      currentLength += paragraph.length + (currentSegment.length > 0 ? 2 : 0)
       currentSegment.push(paragraph)
-      currentLength += paragraph.length + 2
     }
   }
 
-  if (currentSegment.length > 0) {
-    const body = currentSegment.join('\n\n')
-    episodeSegments.push(episodeSegments.length === 0 ? body : `${continuationHeader}\n\n${body}`)
-  }
+  flushParagraphSegment()
 
   return episodeSegments
 }

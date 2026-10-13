@@ -11,6 +11,7 @@ import { generateObject } from 'ai'
 import { z } from 'zod'
 import { revalidatePath } from 'next/cache'
 import { getWorkspace } from '@/lib/auth-session'
+import { isValidUUID } from '@/lib/validators'
 
 function isValidVercelBlobUrl(url: string): boolean {
   try {
@@ -32,6 +33,7 @@ export async function createClinicalRecord(
   fileSize: number,
   mimeType: string,
 ): Promise<{ id?: string; error?: string }> {
+  if (!isValidUUID(patientId)) return { error: 'Invalid patient ID' }
   const workspace = await getWorkspace()
   if (!workspace) return { error: 'Unauthorized' }
 
@@ -63,6 +65,7 @@ export async function createClinicalRecord(
 }
 
 export async function indexClinicalRecord(recordId: string): Promise<{ error?: string }> {
+  if (!isValidUUID(recordId)) return { error: 'Invalid clinical record ID' }
   const workspace = await getWorkspace()
   if (!workspace) return { error: 'Unauthorized' }
 
@@ -131,6 +134,7 @@ export async function createSynthesisRecord(
   patientId: string,
   sourceRecordIds: string[] = [],
 ): Promise<{ id?: string; error?: string }> {
+  if (!isValidUUID(patientId)) return { error: 'Invalid patient ID' }
   const workspace = await getWorkspace()
   if (!workspace) return { error: 'Unauthorized' }
 
@@ -158,6 +162,9 @@ export async function synthesizePatientGraph(
   patientId: string,
   synthesisId: string,
 ): Promise<{ error?: string }> {
+  if (!isValidUUID(patientId) || !isValidUUID(synthesisId)) {
+    return { error: 'Invalid patient or clinical synthesis ID' }
+  }
   const workspace = await getWorkspace()
   if (!workspace) return { error: 'Unauthorized' }
 
@@ -297,6 +304,7 @@ export async function askPatientClinicalQuery(
   question: string,
   previousTurn?: { question: string; answer: string },
 ): Promise<ClinicalQueryResult> {
+  if (!isValidUUID(patientId)) return { error: 'Invalid patient ID' }
   const workspace = await getWorkspace()
   if (!workspace) return { error: 'Unauthorized' }
 

@@ -27,7 +27,7 @@ type Claim = {
 
 type FlaggedConcern = { severity: 'high' | 'medium' | 'low'; description?: string; concern?: string }
 
-function formatShortDate(dateStr: string | null | undefined): string {
+export function formatShortDate(dateStr: string | null | undefined): string {
   if (!dateStr || dateStr.trim() === '' || dateStr.toLowerCase() === 'null') return 'Undated'
   try {
     const d = new Date(dateStr)
@@ -38,7 +38,7 @@ function formatShortDate(dateStr: string | null | undefined): string {
   }
 }
 
-function CitationChip({
+export function CitationChip({
   claim,
   onRecordClick,
   records = [],
@@ -141,7 +141,7 @@ function CitationChip({
   )
 }
 
-function renderContentWithClaims(
+export function renderContentWithClaims(
   node: React.ReactNode,
   claimsMap: Record<string, Claim>,
   onRecordClick: (e: React.MouseEvent, id: string, page?: number) => void,
@@ -159,12 +159,14 @@ function renderContentWithClaims(
 
         idMatches.forEach((rawId, subIdx) => {
           const claimId = rawId.replace(/^claim:/, '')
-          const claim = claimsMap[claimId]
-          if (claim) {
-            validChips.push(
-              <CitationChip key={`${i}-${subIdx}`} claim={claim} onRecordClick={onRecordClick} records={records} />
-            )
+          const claim = claimsMap[claimId] ?? {
+            claim_id: claimId,
+            claim_text: `Unverified citation [${claimId}]`,
+            flag: 'UNVERIFIED',
           }
+          validChips.push(
+            <CitationChip key={`${i}-${subIdx}`} claim={claim} onRecordClick={onRecordClick} records={records} />
+          )
         })
 
         if (validChips.length > 0) {

@@ -50,12 +50,10 @@ export const ClinicalExtractionSchema = z.object({
           .describe('ISO 8601 date this medication was prescribed or documented, if visible.'),
         status: z
           .enum(['active', 'discontinued', 'changed', 'historical'])
-          .default('active')
           .describe('"active" = currently prescribed; "discontinued" = explicitly stopped; "changed" = dose or drug altered; "historical" = listed as prior medication.'),
         pageNumber: z.number().optional().describe('1-indexed page number where this medication appears in the PDF.'),
       }),
-    )
-    .default([]),
+    ),
 
   // ── Lab values ─────────────────────────────────────────────────────────────
   lab_values: z
@@ -75,8 +73,7 @@ export const ClinicalExtractionSchema = z.object({
           .describe('Abnormality flag if physically printed next to the result (H, L, A, *). Only set if explicitly marked; do not infer from the value.'),
         pageNumber: z.number().optional().describe('1-indexed page number where this lab result appears in the PDF.'),
       }),
-    )
-    .default([]),
+    ),
 
   // ── Conditions & diagnoses ─────────────────────────────────────────────────
   conditions: z
@@ -93,13 +90,11 @@ export const ClinicalExtractionSchema = z.object({
           .describe('ISO 8601 date of onset or first diagnosis if stated.'),
         pageNumber: z.number().optional().describe('1-indexed page number where this diagnosis appears in the PDF.'),
       }),
-    )
-    .default([]),
+    ),
 
   // ── Other clinical observations ────────────────────────────────────────────
   otherObservations: z
     .array(z.string())
-    .default([])
     .describe(
       'Clinically significant facts not covered above: vitals (BP, HR, weight, SpO2, temperature), allergies, surgical or procedure history, follow-up instructions, referral outcomes, imaging findings. Each entry should be a concise self-contained sentence with a date if visible, e.g. "Blood pressure 145/90 mmHg on 2024-03-14.", "Allergic to Penicillin (documented).", "Follow-up in 4 weeks."',
     ),
@@ -148,7 +143,7 @@ export async function extractClinicalFacts(
           },
         ],
         schema: ClinicalExtractionSchema,
-        abortSignal: AbortSignal.timeout(35000),
+        abortSignal: AbortSignal.timeout(60000),
       })
 
       return object

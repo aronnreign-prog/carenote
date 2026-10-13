@@ -49,6 +49,12 @@
       "skillPath": "skills/react-best-practices/SKILL.md",
       "computedHash": "6b526d013e28073246a36f99b529bc43745d30832ecfa8217b359c34f260ca6b"
     },
+    "vitest": {
+      "source": "antfu/skills",
+      "sourceType": "github",
+      "skillPath": "skills/vitest/SKILL.md",
+      "computedHash": "62206e8e58bdad39fcdd4bd962dd592a6939ab13c068fd0618ff4304735d5e0b"
+    },
     "web-design-guidelines": {
       "source": "vercel-labs/agent-skills",
       "sourceType": "github",

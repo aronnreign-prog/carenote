@@ -7,7 +7,12 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "npx tsx --test tests/**/*.test.ts"
+    "test": "vitest run --project unit --project dom --project browser",
+    "test:watch": "vitest --project unit --project dom --project browser",
+    "test:browser": "vitest run --project browser",
+    "test:coverage": "vitest run --project unit --project dom --project browser --coverage",
+    "test:e2e": "vitest run --project e2e",
+    "test:all": "vitest run"
   },
   "dependencies": {
     "@ai-sdk/google": "^4.0.45",
@@ -30,13 +35,23 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/react": "^16.3.3",
+    "@types/node": "^22.20.5",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^6.1.2",
+    "@vitest/browser-playwright": "^5.0.4",
+    "@vitest/coverage-v8": "^5.0.4",
     "drizzle-kit": "^0.30.5",
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
+    "jsdom": "^30.1.2",
+    "pdf-lib": "^1.17.1",
+    "playwright": "^1.64.0",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vite-tsconfig-paths": "^6.1.1",
+    "vitest": "^5.0.4"
   }
 }
