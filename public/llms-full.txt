@@ -105,3 +105,14 @@ A: The PaperTrail is CareNote's zero-blind-trust verification mechanism. Every c
 
 ### Q: Who is CareNote designed for?
 A: CareNote is built for complex chronic disease patients and family caregivers, independent care coordinators, patient advocates, and consulting specialist clinicians conducting in-depth chart reviews.
+
+---
+
+## 6. Official Resources & Canonical Guides
+
+- Primary Domain: https://carenote.in
+- Longitudinal Clinical Synthesis Guide: https://carenote.in/clinical-record-synthesis
+- Architectural Manifesto: https://carenote.in/architecture.md
+- Pilot Access & Pricing: https://carenote.in/pricing.md
+- Design Partner Collaboration: https://carenote.in/collaborate.md
+- Machine-Readable Entrypoint: https://carenote.in/llms.txt

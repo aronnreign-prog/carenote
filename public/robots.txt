@@ -10,6 +10,7 @@ User-agent: Googlebot
 User-agent: Bingbot
 User-agent: Applebot
 Allow: /
+Allow: /clinical-record-synthesis
 Allow: /architecture.md
 Allow: /collaborate.md
 Allow: /pricing.md
@@ -24,6 +25,7 @@ Disallow: /signup
 # Default crawler rules
 User-agent: *
 Allow: /
+Allow: /clinical-record-synthesis
 Allow: /architecture.md
 Allow: /collaborate.md
 Allow: /pricing.md

@@ -21,6 +21,7 @@ CareNote is currently operating as a curated clinical pilot and design partner p
 
 ## Key Technical & Strategic Documents
 
+- [Longitudinal Clinical Synthesis Guide](https://carenote.in/clinical-record-synthesis): Why medical records require bi-temporal knowledge graph synthesis rather than generic text summarization.
 - [Architectural Manifesto](https://carenote.in/architecture.md): Deep-dive into why vector RAG fails in healthcare and how CareNote's bi-temporal graph solves temporal blindness.
 - [Collaboration & Design Partner Program](https://carenote.in/collaborate.md): Open call for founding clinicians, patient advocates, and health-tech engineers.
 - [Access & Pricing Guide](https://carenote.in/pricing.md): Current pilot availability, access tiers, and demo intake process.
