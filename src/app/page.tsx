@@ -24,6 +24,12 @@ export default function LandingPage() {
           </Link>
 
           <div className="flex items-center gap-4">
+            <Link
+              href="/clinical-record-synthesis"
+              className="text-[12px] text-white/60 hover:text-white transition-colors hidden sm:inline-block"
+            >
+              Synthesis vs. Summarization
+            </Link>
             <DemoRequestTrigger
               className="text-[12px] font-medium bg-white text-black px-3.5 py-1.5 rounded hover:bg-white/90 transition-colors cursor-pointer"
             >
@@ -274,9 +280,21 @@ export default function LandingPage() {
             <span className="font-semibold text-white/80">CareNote</span>
           </div>
 
-          <div className="flex items-center gap-5 text-white/40">
+          <div className="flex flex-wrap items-center gap-5 text-white/40">
+            <Link href="/clinical-record-synthesis" className="hover:text-white transition-colors">
+              Synthesis Guide
+            </Link>
+            <Link href="/architecture.md" className="hover:text-white transition-colors">
+              Architecture
+            </Link>
+            <Link href="/pricing.md" className="hover:text-white transition-colors">
+              Pricing
+            </Link>
+            <Link href="/collaborate.md" className="hover:text-white transition-colors">
+              Collaborate
+            </Link>
             <DemoRequestTrigger className="hover:text-white transition-colors cursor-pointer">
-              Request Demo Access
+              Request Demo
             </DemoRequestTrigger>
             <span>© {new Date().getFullYear()} CareNote</span>
           </div>
