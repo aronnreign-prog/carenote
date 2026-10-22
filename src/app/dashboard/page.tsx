@@ -254,7 +254,7 @@ export default async function DashboardPage() {
               <div className="border border-[#1F2937] rounded-xl bg-[#0D1117] p-4 space-y-1.5">
                 <p className="text-[12px] font-semibold text-white">Temporal Graph Memory</p>
                 <p className="text-[11px] text-white/50 leading-relaxed">
-                  Clinical entities are connected across encounters to maintain true active regimens and prevent vector chunk amnesia.
+                  Clinical entities are connected across encounters with explicit validity intervals to preserve active regimens and eliminate anachronistic retrieval.
                 </p>
               </div>
               <div className="border border-[#1F2937] rounded-xl bg-[#0D1117] p-4 space-y-1.5">

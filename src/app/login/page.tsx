@@ -64,7 +64,7 @@ export default function LoginPage() {
               },
               {
                 label: 'Persistent graph memory',
-                desc: 'Entities connected across time to maintain true medication regimens and prevent RAG amnesia.',
+                desc: 'Entities connected across time with valid_from and valid_to intervals to eliminate anachronistic retrieval.',
                 color: 'bg-warning',
               },
               {

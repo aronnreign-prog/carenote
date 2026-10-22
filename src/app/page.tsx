@@ -73,10 +73,10 @@ export default function LandingPage() {
         <div className="mx-auto max-w-5xl px-6">
           <div className="max-w-2xl mb-12">
             <h2 className="text-[26px] sm:text-[34px] font-semibold tracking-[-0.025em] text-white mb-3 text-balance">
-              Vector databases have clinical amnesia.
+              Vector databases are temporally blind.
             </h2>
             <p className="text-[15px] sm:text-[16px] text-white/65 leading-[1.65] max-w-[65ch]">
-              Standard AI tools slice clinical PDFs into isolated text chunks and retrieve by cosine similarity. When you ask about medications or diagnoses, the system matches keywords without any model of chronological state transitions, dose titrations, or specialists countermanding prior orders.
+              Standard AI tools slice clinical PDFs into isolated text chunks and retrieve by semantic similarity in an eternal present. Because vector search lacks a model of chronological validity intervals, it retrieves superseded regimens alongside active orders, confuses historical chart lore with current diagnoses, and cannot trace multi-encounter prescribing cascades.
             </p>
           </div>
 

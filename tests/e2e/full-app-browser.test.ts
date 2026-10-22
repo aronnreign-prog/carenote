@@ -238,8 +238,8 @@ describe(`CareNote Live Production Chromium E2E Suite (${LIVE_BASE_URL})`, () =>
               name: 'Spironolactone',
               dose: '25mg',
               frequency: 'daily (HELD)',
-              page: 2,
-              quote: 'Hold Spironolactone 25mg daily given serum potassium 5.6 mEq/L',
+              status: 'discontinued',
+              pageNumber: 2,
             },
           ],
           lab_values: [
@@ -247,13 +247,12 @@ describe(`CareNote Live Production Chromium E2E Suite (${LIVE_BASE_URL})`, () =>
               name: 'Potassium',
               value: '5.6',
               unit: 'mEq/L',
-              reference_range: '3.5-5.0',
+              referenceRange: '3.5-5.0',
               flag: 'HIGH',
-              page: 2,
-              quote: 'Serum Potassium: 5.6 mEq/L (HIGH)',
+              pageNumber: 2,
             },
           ],
-          conditions: [{ name: 'Hyperkalemia', status: 'active', page: 2, quote: 'Acute hyperkalemia' }],
+          conditions: [{ name: 'Hyperkalemia', status: 'active', pageNumber: 2 }],
           otherObservations: [],
         }
       )
