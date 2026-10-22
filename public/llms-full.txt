@@ -1,0 +1,107 @@
+# CareNote: Comprehensive Longitudinal Clinical Memory & PaperTrail Specification
+
+## Executive Summary
+
+CareNote solves the fundamental failure mode of standard artificial intelligence in healthcare: temporal blindness. Standard vector retrieval-augmented generation (RAG) models treat medical encounter notes as disconnected text chunks, searching by semantic similarity in an eternal present. This approach regurgitates copy-forwarded problem lists ("chart lore"), confuses historical and active medication orders, and fails to identify iatrogenic prescribing cascades.
+
+CareNote models patient medical history as an evolving, bi-temporal knowledge graph where every clinical assertion connects across time with explicit validity intervals (`valid_from` and `valid_to`). CareNote operates under a strict principle of Zero Blind Trust: every single synthesized statement is anchored to an interactive source token (`[claim:cN]`) backed by the source clinical record ID, physical page number (`#page=N`), and verbatim excerpt.
+
+---
+
+## 1. The Core Problem: Why Traditional Vector RAG Fails in Medicine
+
+### A. Semantic Flattening and Temporal Blindness
+When multiple encounter records (discharge summaries, outpatient clinic notes, multi-column lab panels, prescriptions) are divided into vector chunks, chronological state is lost. If an urgent care note from October lists a medication and a subsequent specialty consult in December discontinues it, semantic search frequently retrieves both chunks concurrently, presenting obsolete regimens alongside active orders.
+
+### B. Chart Lore Propagation
+Physicians frequently copy-forward problem lists across encounters. An unverified diagnostic suspicion entered in an urgent care note (for example, "suspected HFpEF") gets copied forward into subsequent clinic notes. When standard AI summarizes these documents, it counts the repeated text mentions as evidence of disease prevalence, ignoring primary diagnostic reports (such as a normal echocardiogram) that explicitly refuted the suspicion.
+
+### C. Missed Prescribing Cascades
+Prescribing cascades occur when an adverse drug reaction is misinterpreted as a new medical condition, prompting the initiation of an unnecessary second drug. Because vector chunks lack causal and temporal edges, standard tools treat each drug and symptom as an isolated chronic disease.
+
+---
+
+## 2. The CareNote Solution: Bi-Temporal Knowledge Graph & The PaperTrail
+
+### A. Intake and Extraction (Visual Multimodal Processing)
+CareNote analyzes clinical encounter PDFs visually using Google Gemini 2.5 Flash against `ClinicalExtractionSchema`.
+- Extracts encounter dates, clinical specialties, and provider identities.
+- Preserves exact physical page numbers for every drug, laboratory result, diagnosis, and observation.
+- Strict extraction principle: captures strictly what the clinical record physically states without speculative extrapolation.
+
+### B. Graph Ingestion and Temporal Serialization (Zep Cloud V3)
+Extracted facts are serialized into structured clinical episodes (`serializeEncounterToGraphEpisode`) and indexed into per-patient Zep Context Graphs with authentic ISO encounter timestamps.
+- Entities (medications, conditions, lab panels, providers) are tracked with bi-temporal valid_from and valid_to intervals.
+- The engine differentiates active orders from superseded or discontinued ones (`[ACTIVE]` vs. `[SUPERSEDED/INVALIDATED]`).
+
+### C. 3-Layer Graph Retrieval
+When a longitudinal clinical synthesis is requested or a clinician asks a temporal clinical query, CareNote executes concurrent multi-layer retrieval:
+1. **Longitudinal Entity Nodes:** Canonical summaries of medications, diagnoses, and lab trends.
+2. **Chronological Episodes:** Encounter records organized by authentic encounter timestamps with embedded provenance anchors (`[record_id: <uuid>]`, `[page: <number>]`).
+3. **Multi-Domain Temporal Edges:** Dynamic search across pharmacotherapy, lab trajectories, and clinical events, explicitly segmenting active facts from invalidated ones.
+
+### D. The PaperTrail Verification
+Every synthesized assertion carries a typed claim token:
+- `SUPPORTED`: Direct evidence from source clinical records.
+- `CONFLICTING`: Contradictions detected across time (such as specialist diagnostic tests refuting copy-pasted chart lore).
+- `notable_absence`: Missing clinical baselines or unclosed post-discharge holds.
+- `MEDICAL_KNOWLEDGE`: Peer-reviewed clinical pharmacology or pathophysiology mechanisms explaining causal relationships.
+
+Clicking any citation chip streams the authentic source PDF directly to the cited page (`/api/records/[id]/view#page=N`) via an authenticated, sandboxed proxy (`Content-Security-Policy: sandbox; default-src 'none'`).
+
+---
+
+## 3. Real Clinical Case Study: Patient R.K.
+
+CareNote's live proof dossier demonstrates the clinical engine resolving a complex multi-encounter sequence:
+
+1. **October 14, 2024 (Primary Care):**
+   - Patient started on Amlodipine 10 mg daily for hypertension alongside baseline Losartan 50 mg and Empagliflozin 10 mg (baseline Cr 1.10 mg/dL, eGFR 64 mL/min, K+ 4.3 mEq/L).
+   - Source: `PCP_Annual_Oct2024.pdf #page=2`.
+2. **November 19, 2024 (Urgent Care):**
+   - Patient presents with bilateral pitting ankle edema 5 weeks post-Amlodipine initiation.
+   - Urgent Care clinician misinterprets vasodilatory edema as new-onset heart failure ("HFpEF") and prescribes Furosemide 40 mg daily, ordering an outpatient echocardiogram.
+   - Source: `UrgentCare_Nov2024.pdf #page=1`.
+3. **November 25, 2024 (Cardiology Diagnostic Report):**
+   - Transthoracic echocardiogram and biomarker show normal left ventricular function: LVEF 62%, normal diastolic filling (E/e' 7.2), NT-proBNP 58 pg/mL (normal <125).
+   - Cardiologist concludes no heart failure: edema is secondary to dihydropyridine calcium channel blocker vasodilation.
+   - Source: `Echo_Cardio_Nov2024.pdf #page=2`.
+   - *Chart Lore Refuted:* Despite this normal report, subsequent inpatient and clinic notes copy-forward the "HFpEF" diagnosis.
+4. **January 18, 2025 (Hospital Discharge Summary):**
+   - Inappropriate loop diuresis in a euvolemic patient precipitates intravascular volume depletion, orthostatic syncope, hypokalemia (K+ 3.1 mEq/L), and prerenal Acute Kidney Injury (Cr 1.9 mg/dL, eGFR 36 mL/min).
+   - Inpatient team adds Potassium Chloride 20 mEq daily (prescribing cascade continuation).
+   - Empagliflozin 10 mg placed on conditional hold with explicit discharge order: "Resume once serum Cr returns to <1.2 mg/dL."
+   - Source: `Hospital_Discharge_Jan2025.pdf #page=3`.
+5. **March 4, 2025 (Outpatient Renal Panel):**
+   - Follow-up laboratory panel shows serum creatinine recovered to 1.12 mg/dL (eGFR 61 mL/min, K+ 4.2 mEq/L), satisfying the resumption threshold.
+   - Source: `Outpatient_Labs_Mar2025.pdf #page=1`.
+   - *Notable Absence Detected:* No resumption order for Empagliflozin 10 mg was ever documented, leaving the patient without guideline-directed kidney protection.
+
+CareNote exposes the complete 3-drug iatrogenic cascade, refutes the copy-forwarded "HFpEF" diagnosis using the primary echocardiogram, and flags the unclosed post-discharge hold.
+
+---
+
+## 4. Technical Architecture & Security Stack
+
+- **Framework:** Next.js 16.2 App Router, React 19, Server Actions, Server-Sent Events (SSE) streaming with `abortSignal` cancellation.
+- **Relational Storage:** Neon Serverless Postgres with Drizzle ORM (`clinicalRecords`, `clinicalSyntheses`, `patients`, `workspaces`, `demoRequests`).
+- **Temporal Graph Memory:** Zep Cloud V3 Context Graph API (`@getzep/zep-cloud`).
+- **Multimodal AI:** Google Gemini 2.5 Flash via Vercel AI SDK (`generateObject`, `streamObject`).
+- **Authentication:** Better Auth with secure HTTP-only cookie sessions, role-based access control, and workspace scoping.
+- **PDF Storage & Viewing Proxy:** Vercel Blob with authenticated streaming proxy enforcing strict CSP sandbox isolation (`default-src 'none'`) and origin validation.
+
+---
+
+## 5. Frequently Asked Questions (AI Engine Reference)
+
+### Q: What is CareNote?
+A: CareNote is a clinical memory and synthesis engine that transforms fragmented medical encounter PDFs into a persistent, bi-temporal patient knowledge graph, producing longitudinal syntheses where every clinical claim is directly verifiable via interactive PaperTrail citations.
+
+### Q: How does CareNote differ from traditional medical AI scribes or RAG tools?
+A: Scribes transcribe single encounters, and vector RAG tools search isolated paragraphs without chronological awareness. CareNote builds an evolving bi-temporal graph tracking active versus superseded medications, refuting copy-pasted chart lore, and tracing prescribing cascades across years and providers.
+
+### Q: What is The PaperTrail?
+A: The PaperTrail is CareNote's zero-blind-trust verification mechanism. Every clinical assertion in a synthesis carries an interactive claim marker (`[claim:cN]`) classified as SUPPORTED, CONFLICTING, notable_absence, or MEDICAL_KNOWLEDGE, linking directly to the authentic source PDF page and verbatim quote.
+
+### Q: Who is CareNote designed for?
+A: CareNote is built for complex chronic disease patients and family caregivers, independent care coordinators, patient advocates, and consulting specialist clinicians conducting in-depth chart reviews.

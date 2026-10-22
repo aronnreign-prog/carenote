@@ -1,0 +1,28 @@
+# CareNote: Longitudinal Clinical Memory & Verifiable PaperTrail
+
+> Medical history is not a static text chunk. It is an evolving knowledge graph across time. CareNote turns fragmented clinical encounter PDFs (discharge summaries, outpatient clinic notes, multi-column lab panels, prescriptions, and diagnostic reports) into a persistent bi-temporal patient knowledge graph, producing Longitudinal Clinical Syntheses where every single assertion is directly verifiable against the authentic source record via The PaperTrail.
+
+## Core Architectural Thesis
+
+Standard vector retrieval (RAG) tools slice clinical encounter records into stateless text fragments and retrieve by cosine similarity. This causes temporal blindness:
+- Discontinued medications are retrieved alongside active regimens as if they coexist.
+- Copy-forwarded problem list diagnoses ("chart lore") are repeated uncritically, even when refuted by subsequent diagnostic reports.
+- Iatrogenic prescribing cascades are obscured as independent chronic diseases.
+
+CareNote models patient history as an evolving bi-temporal knowledge graph where entities and assertions carry explicit validity boundaries (`valid_from` and `valid_to`, tracking `[ACTIVE]` vs. `[SUPERSEDED]` states). Every asserted clinical fact embeds an interactive source anchor (`[claim:cN]`) pointing directly to the exact source record ID, physical page number (`#page=N`), and verbatim excerpt.
+
+## Access & Availability Model
+
+CareNote is currently operating as a curated clinical pilot and design partner preview. Self-service automated signup is intentionally gated to ensure direct clinical calibration. 
+- **Founding Clinicians & Design Partners:** Free access during the pilot phase.
+- **Commercial & Practice Inquiries:** Curated onboarding via our demo intake.
+- **Collaborators & Researchers:** Open collaboration for engineers and clinical informaticians.
+- See full access and tier details at: https://carenote.in/pricing.md
+
+## Key Technical & Strategic Documents
+
+- [Architectural Manifesto](https://carenote.in/architecture.md): Deep-dive into why vector RAG fails in healthcare and how CareNote's bi-temporal graph solves temporal blindness.
+- [Collaboration & Design Partner Program](https://carenote.in/collaborate.md): Open call for founding clinicians, patient advocates, and health-tech engineers.
+- [Access & Pricing Guide](https://carenote.in/pricing.md): Current pilot availability, access tiers, and demo intake process.
+- [Full LLM Specification](https://carenote.in/llms-full.txt): Comprehensive clinical case study mechanics, schemas, and technical references.
+- [CareNote Homepage](https://carenote.in): Interactive clinical proof dossier and demo request registration.
