@@ -1,29 +1,24 @@
 # CareNote: Longitudinal Clinical Memory & Verifiable PaperTrail
 
-> Medical history is not a static text chunk. It is an evolving knowledge graph across time. CareNote turns fragmented clinical encounter PDFs (discharge summaries, outpatient clinic notes, multi-column lab panels, prescriptions, and diagnostic reports) into a persistent bi-temporal patient knowledge graph, producing Longitudinal Clinical Syntheses where every single assertion is directly verifiable against the authentic source record via The PaperTrail.
+> Medical history is not a static text chunk. It is an evolving knowledge graph across time. CareNote turns fragmented clinical encounter PDFs into a persistent bi-temporal patient knowledge graph, producing longitudinal clinical syntheses where assertions can be inspected against source records through The PaperTrail.
 
-## Core Architectural Thesis
+## Core architectural thesis
 
-Standard vector retrieval (RAG) tools slice clinical encounter records into stateless text fragments and retrieve by cosine similarity. This causes temporal blindness:
-- Discontinued medications are retrieved alongside active regimens as if they coexist.
-- Copy-forwarded problem list diagnoses ("chart lore") are repeated uncritically, even when refuted by subsequent diagnostic reports.
-- Iatrogenic prescribing cascades are obscured as independent chronic diseases.
+Standard vector retrieval can lose temporal state across fragmented records. It may retrieve discontinued medications alongside active regimens, repeat copied-forward problem-list labels, and obscure relationships across encounters. CareNote models patient history as an evolving graph with explicit validity boundaries and source anchors.
 
-CareNote models patient history as an evolving bi-temporal knowledge graph where entities and assertions carry explicit validity boundaries (`valid_from` and `valid_to`, tracking `[ACTIVE]` vs. `[SUPERSEDED]` states). Every asserted clinical fact embeds an interactive source anchor (`[claim:cN]`) pointing directly to the exact source record ID, physical page number (`#page=N`), and verbatim excerpt.
+## Human-facing discovery pages
 
-## Access & Availability Model
+- [AI medical record summarization for longitudinal chart review](https://carenote.in/longitudinal-chart-review): Human-facing guide to changing clinical state, evidence provenance, contradictions, unresolved work, and CareNote's research-stage approach.
+- [Longitudinal Clinical Synthesis Guide](https://carenote.in/clinical-record-synthesis): CareNote's detailed category and workflow guide.
 
-CareNote is currently operating as a curated clinical pilot and design partner preview. Self-service automated signup is intentionally gated to ensure direct clinical calibration. 
-- **Founding Clinicians & Design Partners:** Free access during the pilot phase.
-- **Commercial & Practice Inquiries:** Curated onboarding via our demo intake.
-- **Collaborators & Researchers:** Open collaboration for engineers and clinical informaticians.
-- See full access and tier details at: https://carenote.in/pricing.md
+## Access and availability
 
-## Key Technical & Strategic Documents
+CareNote is currently a curated clinical pilot and design-partner preview. Self-service signup is gated. Collaborators and researchers can review the public research framing and contact route without submitting patient data.
 
-- [Longitudinal Clinical Synthesis Guide](https://carenote.in/clinical-record-synthesis): Why medical records require bi-temporal knowledge graph synthesis rather than generic text summarization.
-- [Architectural Manifesto](https://carenote.in/architecture.md): Deep-dive into why vector RAG fails in healthcare and how CareNote's bi-temporal graph solves temporal blindness.
-- [Collaboration & Design Partner Program](https://carenote.in/collaborate.md): Open call for founding clinicians, patient advocates, and health-tech engineers.
-- [Access & Pricing Guide](https://carenote.in/pricing.md): Current pilot availability, access tiers, and demo intake process.
-- [Full LLM Specification](https://carenote.in/llms-full.txt): Comprehensive clinical case study mechanics, schemas, and technical references.
-- [CareNote Homepage](https://carenote.in): Interactive clinical proof dossier and demo request registration.
+## Key technical and strategic documents
+
+- [Architectural notes](https://carenote.in/architecture.md): Technical explanation of temporal graph memory and PaperTrail.
+- [Collaboration brief](https://carenote.in/collaborate.md): Research-stage collaboration framing and boundaries.
+- [Access and pricing guide](https://carenote.in/pricing.md): Current access model.
+- [Full LLM specification](https://carenote.in/llms-full.txt): Extended machine-readable context.
+- [CareNote homepage](https://carenote.in): Public proof dossier and demo intake.

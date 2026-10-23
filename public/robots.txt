@@ -1,7 +1,6 @@
 # Robots.txt for CareNote (carenote.in)
 # AI Search & Discovery Crawler Configuration
 
-# Allow AI Search & Answer Engine discovery crawlers
 User-agent: OAI-SearchBot
 User-agent: PerplexityBot
 User-agent: Claude-SearchBot
@@ -10,6 +9,7 @@ User-agent: Googlebot
 User-agent: Bingbot
 User-agent: Applebot
 Allow: /
+Allow: /longitudinal-chart-review
 Allow: /clinical-record-synthesis
 Allow: /architecture.md
 Allow: /collaborate.md
@@ -22,9 +22,9 @@ Disallow: /admin
 Disallow: /login
 Disallow: /signup
 
-# Default crawler rules
 User-agent: *
 Allow: /
+Allow: /longitudinal-chart-review
 Allow: /clinical-record-synthesis
 Allow: /architecture.md
 Allow: /collaborate.md
@@ -37,5 +37,4 @@ Disallow: /admin
 Disallow: /login
 Disallow: /signup
 
-# Sitemaps & Machine-Readable Context
 Sitemap: https://carenote.in/sitemap.xml
