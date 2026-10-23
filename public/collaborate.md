@@ -1,53 +1,75 @@
-# Build With Us: CareNote Collaboration & Design Partner Program
+# Test CareNote's graph approach to longitudinal clinical memory
 
-> Medical history is not a text chunk. It is an evolving graph across time.
+CareNote is looking for a small number of US clinical-informatics and health-tech builders to evaluate one narrow problem in temporal clinical memory.
 
-We are actively seeking founding clinicians, patient advocates, and health-tech engineers who want to collaborate on solving the hard problem of longitudinal clinical memory.
+This is a research collaboration, not a request to endorse a finished clinical product. We are testing whether a patient-specific graph can help a knowledgeable reviewer reconstruct changing clinical state across fragmented records and inspect the evidence behind the reconstruction.
 
----
+## The problem we are testing
 
-## The Vision We Are Pursuing
+Clinical records are written at different times by different people and services. A useful review may need to distinguish:
 
-Standard medical AI tools summarize static PDFs or transcribe single visits. But real clinical medicine happens across multiple providers, hospital admissions, outpatient visits, and prescription adjustments over years.
+- what was active at a given point in time
+- what was held, stopped, or superseded
+- how a medication, finding, symptom, or diagnosis changed across encounters
+- which records support or contradict a claim
+- which follow-up action remains unresolved
+- which source record and page support the conclusion
 
-When medical records are processed as isolated vector chunks, the AI is temporally blind:
-- It repeats copy-forwarded "chart lore" (for example, an unconfirmed diagnosis entered in an urgent care note that was later refuted by a specialist test).
-- It retrieves discontinued medications alongside active regimens.
-- It fails to connect multi-drug prescribing cascades (where Drug A creates a side effect that triggers Drug B, causing complications that trigger Drug C).
+CareNote currently extracts clinical facts and page references from medical-record PDFs, organizes encounters into a patient-specific graph, and produces a longitudinal synthesis or a temporal answer with visible evidence states. The graph is the approach we want to test. We do not yet have external pilot proof that it improves clinical review.
 
-CareNote is pioneering bi-temporal clinical memory: modeling patient health as an evolving knowledge graph with explicit validity boundaries and zero-blind-trust PaperTrail citations.
+## The first evaluation question
 
----
+Can CareNote preserve active versus superseded clinical state across fragmented, multi-provider records and show the supporting pages?
 
-## Who We Are Looking to Collaborate With
+The task set may also examine:
 
-### 1. Founding Clinicians & Medical Informaticians
-- **Specialties of high relevance:** Geriatrics, Nephrology, Cardiology, Complex Internal Medicine, Rheumatology, and Critical Care Transitions.
-- **Your involvement:** 
-  - Test CareNote's longitudinal clinical synthesis against complex patient trajectories.
-  - Help define clinical safety heuristics: detecting prescribing cascades, unclosed post-discharge holds, and cross-encounter lab contradictions.
-  - Guide our clinical extraction schema and evaluation benchmarks.
+- a treatment change followed by a symptom and a follow-on prescription
+- a diagnosis repeated in later notes but challenged by a diagnostic report
+- a conditional medication hold whose stated threshold is later met
+- an important follow-up action that remains undocumented
 
-### 2. Independent Patient Advocates & Geriatric Care Managers
-- **Your perspective:** You are the real-world frontline navigators who assemble fragmented records from multiple health systems into a coherent picture for families and physicians.
-- **Your involvement:**
-  - Pilot CareNote workspaces for your clients' multi-provider records.
-  - Provide direct UX and workflow feedback on the PaperTrail audit inspector and timeline navigation.
-  - Help shape patient-facing and family-facing longitudinal summary formats.
+The point is not to demonstrate that every output is correct. The point is to learn where the graph and evidence trail help, where they fail, and which distinctions matter to people who review complex longitudinal records.
 
-### 3. AI Engineers & Biomedical Graph Researchers
-- **Your technical focus:** Context graphs, bi-temporal indexing, knowledge graph retrieval, multimodal document parsing, and verifiable citation mechanisms.
-- **Your involvement:**
-  - Collaborate on graph retrieval algorithms (combining entity nodes, chronological episodes, and temporal edges).
-  - Benchmark extraction precision across multi-column laboratory reports, handwritten medication charts, and dense discharge summaries.
-  - Build open-source clinical benchmarks and interoperability bridges.
+## What participation looks like
 
----
+The initial collaboration is bounded and can begin asynchronously:
 
-## How to Get Involved
+1. Receive a short written brief describing the system, the evaluation question, and its limits.
+2. Review the current evaluation experience and a fixed task packet of five to ten cases.
+3. Use the supplied public demonstration, synthetic records, or appropriately de-identified and authorized records.
+4. Compare CareNote's output with the source records and record what was correct, partial, unsupported, unclear, or missing.
+5. Complete a short written review of what worked, what failed, and what should be tested next.
 
-If this problem resonates with you:
+A working conversation is available, but a presentation is not required. The evaluation can stay primarily written and asynchronous.
 
-1. **Request a Design Partner Workspace:** Submit your details via the demo intake at [carenote.in/#demo](https://carenote.in/#demo) and mention your background.
-2. **Direct Collaborative Discussion:** Reach out directly through our workspace channels or email us at `collaborate@carenote.in` (or via the founder channels).
-3. **Inspect the Architecture:** Read our complete technical foundation at [carenote.in/architecture.md](https://carenote.in/architecture.md) and [carenote.in/llms-full.txt](https://carenote.in/llms-full.txt).
+## Who this is for
+
+We are looking for people who understand at least one of these areas:
+
+- clinical informatics and longitudinal chart review
+- clinical data systems and health-tech development
+- biomedical or temporal knowledge graphs
+- evidence-grounded AI for healthcare
+- complex internal medicine, geriatrics, nephrology, cardiology, or care transitions
+
+The right collaborator does not need to agree with the graph approach. We want people who can challenge it precisely.
+
+## What CareNote does and does not claim
+
+CareNote can organize record evidence, connect events across time, produce a longitudinal synthesis or temporal query, and link material claims to source records and pages for review.
+
+CareNote does not diagnose, recommend treatment, determine what a patient is actually taking, replace formal medication reconciliation, assign responsibility for follow-up, or make a clinical decision. The evaluation is not a clinical validation study, production pilot, or outcomes study.
+
+We are not claiming clinical outcomes, regulatory authorization, compliance certification, perfect extraction, zero hallucinations, enterprise readiness, direct EHR integration, or autonomous clinical use.
+
+## Data boundary
+
+Use the public demonstration, synthetic records, or appropriately de-identified and authorized materials. Do not send identifiable protected health information through the intake or evaluation. Any work involving real institutional data requires the appropriate approvals, agreements, security review, access controls, and retention terms before access is granted.
+
+Participation is private by default. Public credit, quotes, logos, case studies, or publication require separate written permission.
+
+## Start with one research question
+
+If this problem is close to your work, request a focused collaboration through the [CareNote demo intake](https://carenote.in/#demo) or email collaborate@carenote.in. Tell us what kind of records or workflow you understand and whether you prefer a written asynchronous evaluation or a working conversation.
+
+The useful outcome is not a flattering demonstration. It is a clearer answer to whether graph-based temporal clinical memory helps a real reviewer make sense of a fragmented record.
