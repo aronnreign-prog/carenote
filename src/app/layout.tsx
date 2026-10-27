@@ -82,12 +82,6 @@ const jsonLd = {
       operatingSystem: "Web",
       description:
         "Longitudinal clinical memory and synthesis engine that models patient medical records as an evolving bi-temporal knowledge graph with verified PaperTrail citations.",
-      offers: {
-        "@type": "Offer",
-        price: "0",
-        priceCurrency: "USD",
-        availability: "https://schema.org/InStock",
-      },
     },
     {
       "@type": "Organization",
