@@ -277,7 +277,7 @@ export function DemoRequestModal({
                   </h3>
                 </div>
                 <p id={descId} className="text-[13px] text-white/65 leading-relaxed mt-1.5">
-                  Experience persistent patient knowledge graphs and source-grounded clinical syntheses with clickable PaperTrail citations.
+                  Request access to the research-stage prototype. Its source-page anchors are review aids, not evidence of clinical accuracy or validation.
                 </p>
               </div>
 

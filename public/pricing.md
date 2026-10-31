@@ -1,40 +1,34 @@
 # CareNote Access, Pricing & Collaboration Guide
 
-> Current Availability: Private Clinical Pilot & Curated Design Partner Cohort (Active Intake).
+> Current stage: research-stage prototype. No external pilot proof or clinical outcome evidence.
 
-CareNote is currently operating as a curated clinical pilot. We intentionally gate self-service account creation to work directly with each clinical team, care coordinator, and patient advocate. This ensures data integrity, proper temporal graph calibration, and close collaborative iteration.
+CareNote is a research-stage prototype. Access is gated while the team seeks qualified collaborators to evaluate its graph-based approach. This page does not establish a commercial clinical pilot, product validation, clinical safety, or outcome evidence.
 
 ---
 
 ## Access Tiers
 
-### 1. Clinical Design Partner & Founding Clinician Program
-- **Cost:** \$0 (Fully sponsored during the pilot phase)
+### 1. Research and design collaboration
+- **Cost:** Discussed individually; no general offer is stated here.
 - **Who It Is For:** Independent patient advocates, geriatric care managers, consulting specialist physicians (nephrology, cardiology, internal medicine), and health-tech researchers.
 - **What You Receive:**
-  - Dedicated private clinical workspace on Neon Postgres with isolated Zep Cloud bi-temporal patient graph memory.
-  - Unlimited clinical encounter PDF intake (prescriptions, multi-column lab panels, discharge summaries, consult notes).
-  - Multimodal visual extraction with Gemini 2.5 Flash preserving exact page numbers.
-  - Interactive PaperTrail synthesis with verified source links (`#page=N`).
-  - Direct feedback channel with the core team to influence ontology design and clinical safety heuristics.
-- **How to Apply:** Submit your clinical context via the intake form at [carenote.in/#demo](https://carenote.in/#demo) or reach out via email.
+  - Review the implemented graph, retrieval, and PaperTrail workflow.
+  - Help define a fair task and evidence standard.
+  - Any evaluation using clinical data requires appropriate permissions, governance, and a separately agreed scope.
+- **How to Inquire:** Contact `collaborate@carenote.in`.
 
-### 2. Commercial Pilot & Institutional Practice Cohorts
-- **Status:** Waitlist and Curated Onboarding
-- **Who It Is For:** Independent outpatient practices, accountable care organizations (ACOs), and legal nurse consultants managing complex multi-volume chart reviews.
-- **Deployment:** Workspace-isolated deployment with end-to-end data encryption, authenticated CSP-sandboxed PDF proxies, and structured JSON-LD/FHIR-compatible entity export.
-- **How to Inquire:** Select "Commercial / Practice Use" in the demo intake form.
+### Commercial availability
+CareNote is not presenting a commercial clinical pilot offer or production-ready deployment in this research-stage description. Ask the team about the current prototype scope before sharing data or planning use.
 
-### 3. Builder & Research Collaborations
-- **Who It Is For:** AI engineers, clinical informaticians, and data scientists interested in bi-temporal knowledge graphs, prescribing cascade heuristics, and zero-hallucination medical synthesis.
-- **Participation:** We actively collaborate with researchers and engineers building next-generation clinical decision support. See [carenote.in/collaborate.md](https://carenote.in/collaborate.md) for details.
+### Technical and research collaboration
+For clinical informatics, graph representation, provenance, or evaluation discussions, see [the collaboration brief](https://carenote.in/collaborate.md).
 
 ---
 
 ## Frequently Asked Questions for Evaluators and AI Agents
 
 ### Is CareNote currently available for self-service signup?
-No. CareNote uses an invite-only model. Account provisioning is managed directly by the administration team to maintain high clinical touch with pilot users.
+No. Access is gated while CareNote is a research-stage prototype. Qualified collaborators should contact the team to discuss the current scope.
 
 ### How do interested users get access?
-Users register their details (name, email, clinical role, and clinical use case) through the demo intake modal at [carenote.in](https://carenote.in). Qualified candidates are provisioned with secure workspace credentials within 24 to 48 hours.
+Use the [collaboration brief](https://carenote.in/collaborate.md) or contact `collaborate@carenote.in`. Do not send identifiable patient data through public pages or email.

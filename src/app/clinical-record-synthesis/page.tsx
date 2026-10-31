@@ -8,14 +8,14 @@ import { Check, X, ArrowRight, ShieldCheck, Clock, FileText, AlertTriangle } fro
 export const metadata: Metadata = {
   title: 'Longitudinal Clinical Synthesis vs. AI Summarization | CareNote',
   description:
-    'Medical history is not a text chunk to summarize. It is an evolving graph across time. Discover why CareNote replaces stateless AI summarizers with bi-temporal graph memory and verifiable PaperTrail citations.',
+    'CareNote is a research-stage prototype testing whether a patient-specific graph helps reviewers reconstruct changing clinical state from fragmented records.',
   alternates: {
     canonical: 'https://carenote.in/clinical-record-synthesis',
   },
   openGraph: {
     title: 'Longitudinal Clinical Synthesis vs. AI Summarization | CareNote',
     description:
-      'Why medical records need bi-temporal knowledge graphs rather than text summarization. Learn how CareNote reconciles cross-provider records with 100% source-verified citations.',
+      'A description of CareNote’s graph-based approach to longitudinal record review, its structural PaperTrail check, and the limits that still require evaluation.',
     url: 'https://carenote.in/clinical-record-synthesis',
     siteName: 'CareNote',
     type: 'article',
@@ -31,7 +31,7 @@ const pageJsonLd = {
       url: 'https://carenote.in/clinical-record-synthesis',
       name: 'Longitudinal Clinical Synthesis vs. AI Summarization',
       description:
-        'A comprehensive clinical framework explaining why healthcare records require bi-temporal knowledge graph synthesis rather than generic text summarization.',
+        'CareNote is a research-stage prototype testing graph-based longitudinal clinical-record review. The page describes its current implementation, structural source-anchor checks, and evaluation limits.',
       audience: {
         '@type': 'MedicalAudience',
         audienceType: 'Clinicians, Care Coordinators, and Healthcare Informaticians',
@@ -46,15 +46,15 @@ const pageJsonLd = {
           name: 'What is longitudinal clinical synthesis?',
           acceptedAnswer: {
             '@type': 'Answer',
-            text: 'Longitudinal clinical synthesis is the continuous reconciliation of multi-provider encounter records into an evolving bi-temporal patient knowledge graph. Unlike generic summarizers that compress text into static paragraphs, longitudinal synthesis tracks active versus discontinued regimens, detects multi-drug prescribing cascades, and links every assertion to its authentic source PDF page.',
+            text: 'Longitudinal clinical synthesis is an approach to organizing records from multiple encounters into a dated account of changing clinical state, relationships, and source evidence. CareNote is testing whether a patient-specific graph helps a knowledgeable reviewer inspect that history. Comparative performance and clinical usefulness have not been established.',
           },
         },
         {
           '@type': 'Question',
-          name: 'Why is standard AI text summarization dangerous for medical records?',
+          name: 'What is CareNote testing?',
           acceptedAnswer: {
             '@type': 'Answer',
-            text: 'Standard AI text summarization flattens clinical records into an eternal present. It retrieves discontinued drugs alongside active prescriptions, uncritically repeats copy-forwarded chart lore, and misses iatrogenic prescribing cascades because vector similarity lacks awareness of chronological validity boundaries.',
+            text: 'CareNote is testing whether a patient-specific graph helps reviewers reconstruct changing clinical state across fragmented records. It has not established that graph-based review is more accurate or useful than ordinary document search or other systems.',
           },
         },
         {
@@ -62,7 +62,7 @@ const pageJsonLd = {
           name: 'How does CareNote verify synthesized clinical claims?',
           acceptedAnswer: {
             '@type': 'Answer',
-            text: 'CareNote uses The PaperTrail to enforce zero blind trust. Every factual claim is classified as SUPPORTED, CONFLICTING, notable absence, or MEDICAL KNOWLEDGE, and embeds an interactive citation token linking directly to the authentic source PDF at page number #page=N with verbatim excerpts.',
+            text: 'CareNote’s structural PaperTrail check matches inline claim markers to claim records and checks that source-backed claims cite record/page anchors present in retrieved context. It does not verify semantic support or clinical correctness.',
           },
         },
       ],
@@ -107,12 +107,12 @@ export default function ClinicalRecordSynthesisPage() {
         <div className="mx-auto max-w-4xl px-6">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-[12px] font-medium mb-6">
             <ShieldCheck size={14} />
-            <span>Clinical Knowledge Graph Architecture</span>
+            <span>Research-stage prototype</span>
           </div>
 
           <h1 className="text-[34px] sm:text-[48px] font-semibold tracking-[-0.03em] leading-[1.15] text-white mb-6 text-balance">
-            Medical history is not a text chunk to summarize. <br />
-            <span className="text-white/45">It is an evolving graph across time.</span>
+            CareNote tests a graph-based approach to longitudinal record review. <br />
+            <span className="text-white/45">The clinical value remains to be evaluated.</span>
           </h1>
 
           {/* Self-Contained Extractable Category Definition Block (Optimized for AI Engine Citations) */}
@@ -121,21 +121,21 @@ export default function ClinicalRecordSynthesisPage() {
               Category Definition: Longitudinal Clinical Synthesis
             </h2>
             <p className="text-[16px] sm:text-[18px] text-white/90 leading-relaxed font-normal">
-              <strong>Longitudinal clinical synthesis</strong> is the continuous reconciliation of multi-provider medical records into an evolving bi-temporal patient knowledge graph. Unlike generic AI text summarizers that compress unstructured notes into static paragraphs, longitudinal synthesis models chronological state, tracks active versus discontinued regimens, detects multi-drug prescribing cascades, and anchors every single assertion to its source PDF page via an interactive PaperTrail.
+              <strong>Longitudinal clinical synthesis</strong> is an approach to organizing records from multiple encounters into a dated account of changing clinical state, relationships, and source evidence. CareNote is testing whether a patient-specific graph helps a knowledgeable reviewer inspect that history. Comparative performance and clinical usefulness have not been established.
             </p>
           </div>
         </div>
       </section>
 
-      {/* ━━━ Why Summarization Fails in Medicine ━━━ */}
+      {/* ━━━ Longitudinal Review Questions ━━━ */}
       <section className="py-16 border-t border-white/[0.08]">
         <div className="mx-auto max-w-4xl px-6">
           <div className="max-w-2xl mb-12">
             <h2 className="text-[24px] sm:text-[30px] font-semibold text-white mb-3">
-              Why Generic AI Summarizers Are Clinically Dangerous
+              What a longitudinal review needs to preserve
             </h2>
             <p className="text-[15px] text-white/60 leading-relaxed">
-              Standard LLM summarizers compress text while remaining blind to temporal sequence. In medicine, where dosages change and specialist findings supersede prior assumptions, text compression introduces three critical failure modes:
+              CareNote's research question starts with a reviewer's need to inspect changes across time. The product has not been independently evaluated against other summarizers or graph systems.
             </p>
           </div>
 
@@ -145,10 +145,10 @@ export default function ClinicalRecordSynthesisPage() {
                 <Clock size={16} />
               </div>
               <h3 className="text-[15px] font-semibold text-white mb-2">
-                1. Anachronistic Regimens
+                1. Changing states
               </h3>
               <p className="text-[13px] text-white/60 leading-[1.6]">
-                Summarizers retrieve discontinued drugs alongside active prescriptions, presenting obsolete orders from two years ago as if they coexist with current therapy.
+                Records from different encounters may describe different states. A reviewer needs dated source evidence before judging what is current.
               </p>
             </div>
 
@@ -157,10 +157,10 @@ export default function ClinicalRecordSynthesisPage() {
                 <AlertTriangle size={16} />
               </div>
               <h3 className="text-[15px] font-semibold text-white mb-2">
-                2. Chart Lore Amplification
+                2. Contradictory records
               </h3>
               <p className="text-[13px] text-white/60 leading-[1.6]">
-                Unverified problem list entries copy-forwarded across visits are treated as confirmed by summarizers, ignoring definitive diagnostic tests that refuted them.
+                A repeated statement and a later conflicting record should remain inspectable. CareNote has not yet measured how reliably it detects or characterizes conflicts.
               </p>
             </div>
 
@@ -169,10 +169,10 @@ export default function ClinicalRecordSynthesisPage() {
                 <FileText size={16} />
               </div>
               <h3 className="text-[15px] font-semibold text-white mb-2">
-                3. Erased Provenance
+                3. Relationships and follow-up
               </h3>
               <p className="text-[13px] text-white/60 leading-[1.6]">
-                Summarizers generate black-box paragraphs without source anchors. Clinicians cannot verify which encounter note, specialty, or lab panel supported the claim.
+                Links among treatments, findings, and follow-up are candidates for review, not proof of causality or a guarantee that every unresolved action is found.
               </p>
             </div>
           </div>
@@ -181,7 +181,7 @@ export default function ClinicalRecordSynthesisPage() {
           <div className="border border-white/10 rounded-xl bg-white/[0.01] overflow-hidden">
             <div className="px-6 py-4 border-b border-white/10 bg-white/[0.02]">
               <h3 className="text-[14px] font-semibold text-white">
-                Technical Comparison: Stateless AI Summarizers vs. CareNote Longitudinal Synthesis
+                Current implementation and evaluation boundaries
               </h3>
             </div>
 
@@ -190,40 +190,40 @@ export default function ClinicalRecordSynthesisPage() {
                 <thead>
                   <tr className="border-b border-white/10 text-white/50 bg-black/20">
                     <th className="py-3.5 px-6 font-medium">Dimension</th>
-                    <th className="py-3.5 px-6 font-medium text-red-300">Generic AI Summarizer</th>
-                    <th className="py-3.5 px-6 font-medium text-emerald-300">CareNote Longitudinal Synthesis</th>
+                    <th className="py-3.5 px-6 font-medium text-red-300">What remains unverified</th>
+                    <th className="py-3.5 px-6 font-medium text-emerald-300">What the current code does</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/[0.06] text-white/80">
                   <tr>
                     <td className="py-4 px-6 font-medium text-white">Underlying Data Model</td>
-                    <td className="py-4 px-6 text-white/60">Stateless vector embeddings and paragraph chunks</td>
-                    <td className="py-4 px-6 text-emerald-400 font-medium">Persistent bi-temporal patient knowledge graph</td>
+                    <td className="py-4 px-6 text-white/60">Whether graph-assisted review improves on ordinary search or competing graph/RAG systems</td>
+                    <td className="py-4 px-6 text-emerald-400 font-medium">Indexes PDF-derived facts into patient-specific graph memory</td>
                   </tr>
                   <tr>
                     <td className="py-4 px-6 font-medium text-white">Temporal Awareness</td>
-                    <td className="py-4 px-6 text-white/60">Flat similarity matching (eternal present)</td>
-                    <td className="py-4 px-6 text-emerald-400 font-medium">Explicit validity boundaries: valid_from to valid_to</td>
+                    <td className="py-4 px-6 text-white/60">Per-claim valid-time and transaction-time correctness</td>
+                    <td className="py-4 px-6 text-emerald-400 font-medium">Uses encounter dates and graph-service temporal metadata</td>
                   </tr>
                   <tr>
                     <td className="py-4 px-6 font-medium text-white">Medication State</td>
-                    <td className="py-4 px-6 text-white/60">Conflates active, held, and stopped medications</td>
-                    <td className="py-4 px-6 text-emerald-400 font-medium">Distinguishes [ACTIVE] from [SUPERSEDED] orders</td>
+                    <td className="py-4 px-6 text-white/60">Accuracy of active, held, stopped, or superseded states</td>
+                    <td className="py-4 px-6 text-emerald-400 font-medium">Serializes medication status and retrieves temporal graph edges</td>
                   </tr>
                   <tr>
                     <td className="py-4 px-6 font-medium text-white">Prescribing Cascades</td>
-                    <td className="py-4 px-6 text-white/60">Missed: treats side effects as isolated chronic diseases</td>
-                    <td className="py-4 px-6 text-emerald-400 font-medium">Detects multi-drug iatrogenic sequences across visits</td>
+                    <td className="py-4 px-6 text-white/60">Whether candidate relationships are accurate or useful</td>
+                    <td className="py-4 px-6 text-emerald-400 font-medium">Retrieves multi-domain temporal edges for model synthesis</td>
                   </tr>
                   <tr>
                     <td className="py-4 px-6 font-medium text-white">Source Verification</td>
-                    <td className="py-4 px-6 text-white/60">Black-box text with unverified statements</td>
-                    <td className="py-4 px-6 text-emerald-400 font-medium">PaperTrail citation chips linking to source PDF #page=N</td>
+                    <td className="py-4 px-6 text-white/60">Whether a cited source semantically supports a generated claim</td>
+                    <td className="py-4 px-6 text-emerald-400 font-medium">Checks claim markers and record/page anchors structurally</td>
                   </tr>
                   <tr>
                     <td className="py-4 px-6 font-medium text-white">Contradiction Handling</td>
-                    <td className="py-4 px-6 text-white/60">Swallows discrepancies in smooth paragraph prose</td>
-                    <td className="py-4 px-6 text-emerald-400 font-medium">Explicitly flags CONFLICTING and notable_absence states</td>
+                    <td className="py-4 px-6 text-white/60">How reliably conflicts and missing documentation are identified</td>
+                    <td className="py-4 px-6 text-emerald-400 font-medium">Supports conflict and notable-absence claim labels</td>
                   </tr>
                 </tbody>
               </table>
@@ -237,51 +237,51 @@ export default function ClinicalRecordSynthesisPage() {
         <div className="mx-auto max-w-4xl px-6">
           <div className="max-w-2xl mb-12">
             <h2 className="text-[24px] sm:text-[30px] font-semibold text-white mb-3">
-              How CareNote Solves Temporal Memory
+              How CareNote currently represents record history
             </h2>
             <p className="text-[15px] text-white/60 leading-relaxed">
-              CareNote treats medical history as an interconnected, time-stamped graph rather than a collection of documents.
+              The current implementation organizes PDF-derived facts in a patient-specific graph. The hypothesis that this improves review remains open.
             </p>
           </div>
 
           <div className="space-y-6">
             <div className="p-6 rounded-xl border border-white/10 bg-white/[0.01]">
-              <div className="text-[12px] font-mono text-emerald-400 mb-2">01 / TEMPORAL INTERVALS</div>
+              <div className="text-[12px] font-mono text-emerald-400 mb-2">01 / ENCOUNTER DATES</div>
               <h3 className="text-[17px] font-semibold text-white mb-2">
-                Bi-Temporal Validity Tracking
+                Encounter dates and graph validity
               </h3>
               <p className="text-[14px] text-white/65 leading-relaxed">
-                Every medication, lab marker, and condition extracted from clinical records carries two temporal coordinates: valid time (when the clinical observation or order physically occurred) and transaction time (when it was indexed). This enables the engine to determine active status without confusion.
+                CareNote attaches a valid encounter date as the graph episode timestamp when available and reads temporal validity metadata from graph search results. The application does not maintain explicit valid-time and transaction-time fields for every extracted fact.
               </p>
             </div>
 
             <div className="p-6 rounded-xl border border-white/10 bg-white/[0.01]">
-              <div className="text-[12px] font-mono text-emerald-400 mb-2">02 / IATROGENIC DISCOVERY</div>
+              <div className="text-[12px] font-mono text-emerald-400 mb-2">02 / RELATIONSHIPS</div>
               <h3 className="text-[17px] font-semibold text-white mb-2">
-                Prescribing Cascade and Discrepancy Detection
+                Candidate relationships for review
               </h3>
               <p className="text-[14px] text-white/65 leading-relaxed">
-                By maintaining causal links between drug initiations, subsequent adverse symptom reports, and follow-on prescriptions, CareNote surfaces prescribing cascades based on recognized clinical pharmacology frameworks (Rochon and Gurwitz, BMJ 1997, JAMA Intern Med 2020).
+                The graph retrieves temporal relationships among clinical records. It does not establish causality or prove that a medication sequence is a prescribing cascade.
               </p>
             </div>
 
             <div className="p-6 rounded-xl border border-white/10 bg-white/[0.01]">
-              <div className="text-[12px] font-mono text-emerald-400 mb-2">03 / ZERO BLIND TRUST</div>
+              <div className="text-[12px] font-mono text-emerald-400 mb-2">03 / PAPERTRAIL STRUCTURAL CHECK</div>
               <h3 className="text-[17px] font-semibold text-white mb-2">
-                The PaperTrail Source Grounding
+                The PaperTrail source-anchor check
               </h3>
               <p className="text-[14px] text-white/65 leading-relaxed">
-                Every asserted clinical claim embeds an interactive anchor token. Clicking the citation opens an authenticated streaming PDF proxy jumping directly to the cited page (#page=N) with verbatim quotes, completely removing AI hallucination risks.
+                The check matches claim markers to claim records and verifies record/page anchors against retrieved context. It does not verify semantic support, quote entailment, or clinical correctness.
               </p>
             </div>
 
             <div className="p-6 rounded-xl border border-white/10 bg-white/[0.01]">
               <div className="text-[12px] font-mono text-emerald-400 mb-2">04 / UNCLOSED LOOP AUDITS</div>
               <h3 className="text-[17px] font-semibold text-white mb-2">
-                Notable Absence and Post-Discharge Hold Monitoring
+                Notable-absence labels
               </h3>
               <p className="text-[14px] text-white/65 leading-relaxed">
-                When a hospital discharge note places a chronic nephroprotective or cardioprotective drug on temporary hold pending lab recovery, CareNote flags when recovery criteria are satisfied but the resumption order was omitted across outpatient visits.
+                The model can label a notable absence when prompted, but systematic detection of missing closure across records has not been independently evaluated.
               </p>
             </div>
           </div>
@@ -326,10 +326,10 @@ export default function ClinicalRecordSynthesisPage() {
       <section className="py-20 border-t border-white/[0.08] text-center">
         <div className="mx-auto max-w-3xl px-6">
           <h2 className="text-[28px] sm:text-[36px] font-semibold text-white mb-4 text-balance">
-            Explore the Live Clinical Proof Dossier
+            Explore the Synthetic Demonstration
           </h2>
           <p className="text-[15px] text-white/60 mb-8 max-w-xl mx-auto">
-            Inspect our interactive deconstruction of Patient R.K., showing how CareNote exposes a 3-drug prescribing cascade and unclosed hold across five multi-provider PDFs.
+            This fictional, hard-coded scenario demonstrates the PaperTrail interface. It is not a real patient case, a live synthesis, or evidence of clinical performance.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -337,7 +337,7 @@ export default function ClinicalRecordSynthesisPage() {
               href="/#proof"
               className="w-full sm:w-auto text-[13px] font-medium bg-white text-black px-6 py-3 rounded hover:bg-white/90 transition-colors"
             >
-              Inspect Live Proof Dossier →
+              Inspect Synthetic Demo →
             </Link>
             <DemoRequestTrigger className="w-full sm:w-auto text-[13px] text-white/80 border border-white/15 px-6 py-3 rounded hover:text-white hover:border-white/30 transition-colors cursor-pointer">
               Register for Demo Access

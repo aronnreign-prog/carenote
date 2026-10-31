@@ -7,6 +7,7 @@ import { clinicalSyntheses, patients } from '@/lib/db/schema'
 import { eq, and } from 'drizzle-orm'
 import { getWorkspace } from '@/lib/auth-session'
 import { isValidUUID } from '@/lib/validators'
+import { validatePaperTrailClaims } from '@/lib/ai/validate-papertrail'
 import { NextResponse } from 'next/server'
 
 export const maxDuration = 300
@@ -116,61 +117,73 @@ PaperTrail Citation Requirement:
       ],
       schema: ClinicalSynthesisSchema,
       abortSignal: req.signal,
-      onError: async ({ error }) => {
-        const technicalError = error instanceof Error ? (error.stack || error.message) : String(error)
-        console.error('[Synthesis Stream Generation Error - Developer Log]:', technicalError)
-
-        const userFacingMessage = 'Unable to complete longitudinal clinical synthesis. Please retry in a moment.'
-        try {
-          await db
-            .update(clinicalSyntheses)
-            .set({
-              status: 'failed',
-              error_message: userFacingMessage,
-            })
-            .where(
-              and(
-                eq(clinicalSyntheses.id, targetSynthesisId),
-                eq(clinicalSyntheses.patient_id, patientId),
-                eq(clinicalSyntheses.workspace_id, workspace.id)
-              )
-            )
-        } catch (dbErr) {
-          console.error('[Synthesis Stream DB Error on failure update]:', dbErr)
-        }
-      },
-      onFinish: async ({ object }) => {
-        if (object) {
-          try {
-            const cleanedSynthesisText = object.synthesis_text.replace(/^[0-9]+\s+/, '').trim()
-            await db
-              .update(clinicalSyntheses)
-              .set({
-                status: 'complete',
-                synthesis_text: cleanedSynthesisText,
-                claims: object.claims,
-                flagged_concerns: object.flagged_concerns,
-                completed_at: new Date(),
-              })
-              .where(
-                and(
-                  eq(clinicalSyntheses.id, targetSynthesisId),
-                  eq(clinicalSyntheses.patient_id, patientId),
-                  eq(clinicalSyntheses.workspace_id, workspace.id)
-                )
-              )
-          } catch (dbErr) {
-            console.error('[Synthesis Stream DB Error on complete update]:', dbErr)
-          }
-        }
-      },
     })
 
-    return result.toTextStreamResponse({
-      headers: {
-        'Transfer-Encoding': 'chunked',
-        'Connection': 'keep-alive',
-      },
+    // Do not send generated text to the browser before its PaperTrail structure
+    // has been checked. This endpoint intentionally buffers the final object,
+    // validates it, persists it, and only then returns the synthesis text.
+    let object: Awaited<typeof result.object>
+    try {
+      object = await result.object
+    } catch (generationError) {
+      const technicalError = generationError instanceof Error ? generationError.message : String(generationError)
+      console.error('[Synthesis Stream Generation Error - Developer Log]:', technicalError)
+      await db
+        .update(clinicalSyntheses)
+        .set({
+          status: 'failed',
+          error_message: 'Unable to complete longitudinal clinical synthesis. Please retry in a moment.',
+        })
+        .where(
+          and(
+            eq(clinicalSyntheses.id, targetSynthesisId),
+            eq(clinicalSyntheses.patient_id, patientId),
+            eq(clinicalSyntheses.workspace_id, workspace.id)
+          )
+        )
+      return NextResponse.json(
+        { error: 'Unable to complete longitudinal clinical synthesis. Please retry in a moment.' },
+        { status: 500 }
+      )
+    }
+    const paperTrailCheck = validatePaperTrailClaims(object.synthesis_text, object.claims, context)
+    if (!paperTrailCheck.valid) {
+      const error = `PaperTrail integrity check failed: ${paperTrailCheck.errors.join(' ')}`
+      await db
+        .update(clinicalSyntheses)
+        .set({ status: 'failed', error_message: error })
+        .where(
+          and(
+            eq(clinicalSyntheses.id, targetSynthesisId),
+            eq(clinicalSyntheses.patient_id, patientId),
+            eq(clinicalSyntheses.workspace_id, workspace.id)
+          )
+        )
+      return NextResponse.json({ error: 'Synthesis failed PaperTrail integrity checks.' }, { status: 422 })
+    }
+
+    const cleanedSynthesisText = object.synthesis_text.replace(/^[0-9]+\s+/, '').trim()
+    await db
+      .update(clinicalSyntheses)
+      .set({
+        status: 'complete',
+        synthesis_text: cleanedSynthesisText,
+        claims: object.claims,
+        flagged_concerns: object.flagged_concerns,
+        completed_at: new Date(),
+      })
+      .where(
+        and(
+          eq(clinicalSyntheses.id, targetSynthesisId),
+          eq(clinicalSyntheses.patient_id, patientId),
+          eq(clinicalSyntheses.workspace_id, workspace.id)
+        )
+      )
+
+    return Response.json({
+      synthesis_text: cleanedSynthesisText,
+      claims: object.claims,
+      flagged_concerns: object.flagged_concerns,
     })
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)

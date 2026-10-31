@@ -322,13 +322,23 @@ describe('Edge Proxy & API Route Handlers', () => {
       mockUpdateChain() // processing update
       const completeUpdate = mockUpdateChain() // onFinish complete update
 
-      routeMocks.queryPatientMemory.mockResolvedValueOnce('<FACTS>\n- Lisinopril 10mg [ACTIVE]\n</FACTS>')
+      routeMocks.queryPatientMemory.mockResolvedValueOnce(`CLINICAL ENCOUNTER RECORD: med.pdf (record_id: rec-1)\n- Lisinopril 10mg [page: 1] [record_id: rec-1]`)
 
       let capturedOptions: Record<string, any> = {}
       routeMocks.streamObject.mockImplementationOnce((opts: Record<string, any>) => {
         capturedOptions = opts
         return {
-          toTextStreamResponse: () => new Response('streamed-chunk', { status: 200 }),
+          object: Promise.resolve({
+            synthesis_text: '12 Longitudinal synthesis text [claim:c1].',
+            claims: [{
+              claim_id: 'c1',
+              claim_text: 'Lisinopril active',
+              claim_type: 'source_record',
+              flag: 'SUPPORTED',
+              evidence: [{ source_record_id: 'rec-1', source_page: 1 }],
+            }],
+            flagged_concerns: [],
+          }),
         }
       })
 
@@ -341,23 +351,100 @@ describe('Edge Proxy & API Route Handlers', () => {
 
       const res = await streamSynthesisPOST(req, { params: Promise.resolve({ id: validPatientId }) })
       expect(res.status).toBe(200)
-      expect(await res.text()).toBe('streamed-chunk')
-      expect(capturedOptions.abortSignal).toBeDefined()
-
-      // Verify onFinish callback strips leading numeric prefix and saves claims/concerns to DB
-      await capturedOptions.onFinish({
-        object: {
-          synthesis_text: '12 Longitudinal synthesis text [claim:c1].',
-          claims: [{ claim_id: 'c1', claim_text: 'Lisinopril active', claim_type: 'source_record' }],
-          flagged_concerns: [],
-        },
+      expect(await res.json()).toEqual({
+        synthesis_text: 'Longitudinal synthesis text [claim:c1].',
+        claims: [{
+          claim_id: 'c1',
+          claim_text: 'Lisinopril active',
+          claim_type: 'source_record',
+          flag: 'SUPPORTED',
+          evidence: [{ source_record_id: 'rec-1', source_page: 1 }],
+        }],
+        flagged_concerns: [],
       })
+      expect(capturedOptions.abortSignal).toBeDefined()
 
       expect(completeUpdate.set).toHaveBeenCalledWith(
         expect.objectContaining({
           status: 'complete',
           synthesis_text: 'Longitudinal synthesis text [claim:c1].',
         })
+      )
+    })
+
+    test('rejects a streamed synthesis with missing PaperTrail evidence before returning or persisting it', async () => {
+      routeMocks.getWorkspace.mockResolvedValueOnce({ id: validWorkspaceId })
+      mockSelectChain([
+        {
+          id: validPatientId,
+          workspace_id: validWorkspaceId,
+          name: 'Asha Rao',
+          date_of_birth: '1965-09-12',
+          biological_sex: 'Female',
+        },
+      ])
+      mockSelectChain([{ id: validSynthesisId, patient_id: validPatientId, workspace_id: validWorkspaceId }])
+      mockUpdateChain() // processing update
+      const failureUpdate = mockUpdateChain()
+
+      routeMocks.queryPatientMemory.mockResolvedValueOnce(
+        'CLINICAL ENCOUNTER RECORD: med.pdf (record_id: rec-1)\n- Lisinopril 10mg [page: 1] [record_id: rec-1]'
+      )
+      routeMocks.streamObject.mockImplementationOnce(() => ({
+        object: Promise.resolve({
+          synthesis_text: 'Lisinopril is active [claim:c1].',
+          claims: [{ claim_id: 'c1', claim_text: 'Lisinopril active', claim_type: 'source_record', flag: 'SUPPORTED' }],
+          flagged_concerns: [],
+        }),
+      }))
+
+      const req = new Request(`http://localhost:3000/api/patients/${validPatientId}/syntheses/stream`, {
+        method: 'POST',
+        body: JSON.stringify({ synthesisId: validSynthesisId }),
+      })
+      const res = await streamSynthesisPOST(req, { params: Promise.resolve({ id: validPatientId }) })
+
+      expect(res.status).toBe(422)
+      expect(await res.json()).toEqual({ error: 'Synthesis failed PaperTrail integrity checks.' })
+      expect(failureUpdate.set).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: 'failed',
+          error_message: expect.stringContaining('has no PaperTrail evidence'),
+        })
+      )
+    })
+
+    test('marks synthesis failed and returns a safe error when model generation rejects', async () => {
+      routeMocks.getWorkspace.mockResolvedValueOnce({ id: validWorkspaceId })
+      mockSelectChain([
+        {
+          id: validPatientId,
+          workspace_id: validWorkspaceId,
+          name: 'Asha Rao',
+          date_of_birth: '1965-09-12',
+          biological_sex: 'Female',
+        },
+      ])
+      mockSelectChain([{ id: validSynthesisId, patient_id: validPatientId, workspace_id: validWorkspaceId }])
+      mockUpdateChain() // processing update
+      const failureUpdate = mockUpdateChain()
+      routeMocks.queryPatientMemory.mockResolvedValueOnce('Relevant clinical context.')
+      routeMocks.streamObject.mockImplementationOnce(() => ({
+        object: Promise.reject(new Error('upstream model failure')),
+      }))
+
+      const req = new Request(`http://localhost:3000/api/patients/${validPatientId}/syntheses/stream`, {
+        method: 'POST',
+        body: JSON.stringify({ synthesisId: validSynthesisId }),
+      })
+      const res = await streamSynthesisPOST(req, { params: Promise.resolve({ id: validPatientId }) })
+
+      expect(res.status).toBe(500)
+      expect(await res.json()).toEqual({
+        error: 'Unable to complete longitudinal clinical synthesis. Please retry in a moment.',
+      })
+      expect(failureUpdate.set).toHaveBeenCalledWith(
+        expect.objectContaining({ status: 'failed' })
       )
     })
   })

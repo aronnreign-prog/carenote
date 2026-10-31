@@ -15,6 +15,7 @@ vi.mock('@/lib/ai/model', () => ({
 
 import { extractClinicalFacts, ClinicalExtractionSchema } from '@/lib/ai/extract'
 import { ClinicalSynthesisSchema, ClinicalQueryOutputSchema } from '@/lib/ai/schemas'
+import { validatePaperTrailClaims } from '@/lib/ai/validate-papertrail'
 import { isValidUUID } from '@/lib/validators'
 
 describe('AI Multimodal Extraction, Schemas & Validators', () => {
@@ -103,6 +104,130 @@ describe('AI Multimodal Extraction, Schemas & Validators', () => {
   })
 
   describe('ClinicalExtractionSchema, ClinicalSynthesisSchema & ClinicalQueryOutputSchema', () => {
+    test('PaperTrail integrity rejects missing markers, missing source evidence, and anchors absent from retrieved context', () => {
+      const missingMarker = validatePaperTrailClaims(
+        'A supported statement.',
+        [{ claim_id: 'c1', claim_type: 'source_record', flag: 'SUPPORTED', evidence: [] }],
+        '[record_id: rec-1] [page: 1]',
+      )
+      expect(missingMarker.valid).toBe(false)
+      expect(missingMarker.errors).toEqual(expect.arrayContaining([
+        'Claim "c1" is not referenced in the synthesis text.',
+        'Source-backed claim "c1" has no PaperTrail evidence.',
+      ]))
+
+      const badAnchor = validatePaperTrailClaims(
+        'A supported statement [claim:c1].',
+        [{
+          claim_id: 'c1',
+          claim_type: 'source_record',
+          flag: 'SUPPORTED',
+          evidence: [{ source_record_id: 'rec-other', source_page: 1 }],
+        }],
+        'CLINICAL ENCOUNTER RECORD: note.pdf (record_id: rec-1)\nFinding [page: 1] [record_id: rec-1]',
+      )
+      expect(badAnchor.valid).toBe(false)
+      expect(badAnchor.errors[0]).toContain('does not match a retrieved record/page anchor')
+    })
+
+    test('PaperTrail integrity accepts matching anchors and allows unverified claims to abstain', () => {
+      const result = validatePaperTrailClaims(
+        'The record states the value [claim:c1]. An uncertain inference is marked [claim:c2].',
+        [
+          {
+            claim_id: 'c1',
+            claim_type: 'source_record',
+            flag: 'SUPPORTED',
+            evidence: [{ source_record_id: 'rec-1', source_page: 2 }],
+          },
+          { claim_id: 'c2', claim_type: 'medical_knowledge', flag: 'UNVERIFIED' },
+        ],
+        'CLINICAL ENCOUNTER RECORD: note.pdf (record_id: rec-1)\nPotassium was 5.7 [page: 2] [record_id: rec-1]',
+      )
+      expect(result).toEqual({ valid: true, errors: [] })
+    })
+
+    test('PaperTrail integrity accepts repeated same-page facts and rejects split or ambiguous record/page anchors', () => {
+      const claims = [{
+        claim_id: 'c1',
+        claim_type: 'source_record',
+        flag: 'SUPPORTED',
+        evidence: [{ source_record_id: 'rec-1', source_page: 2 }],
+      }]
+      const distinctPages = validatePaperTrailClaims(
+        'The record supports this claim [claim:c1].',
+        [{
+          ...claims[0],
+          evidence: [
+            { source_record_id: 'rec-1', source_page: 1 },
+            { source_record_id: 'rec-1', source_page: 2 },
+          ],
+        }],
+        [
+          'Potassium was 5.7 [page: 1] [record_id: rec-1]',
+          'Creatinine was 1.6 [page: 2] [record_id: rec-1]',
+        ].join('\n'),
+      )
+      expect(distinctPages).toEqual({ valid: true, errors: [] })
+
+      const splitAnchors = validatePaperTrailClaims(
+        'The record supports this claim [claim:c1].',
+        claims,
+        [
+          'Potassium was 5.7 [page: 1] [record_id: rec-1]',
+          'Creatinine was 1.6 [page: 2] [record_id: rec-2]',
+        ].join('\n'),
+      )
+      expect(splitAnchors.valid).toBe(false)
+      expect(splitAnchors.errors[0]).toContain('does not match a retrieved record/page anchor')
+
+      const ambiguousAnchors = validatePaperTrailClaims(
+        'The record supports this claim [claim:c1].',
+        claims,
+        [
+          'Potassium was 5.7 [page: 2] [record_id: rec-1]',
+          'Creatinine was 1.6 [page: 2] [record_id: rec-1]',
+        ].join('\n'),
+      )
+      expect(ambiguousAnchors.valid).toBe(false)
+    })
+
+    test('PaperTrail integrity rejects source anchors attached to non-source claims and invalid evidence metadata', () => {
+      const withNonSourceAnchor = validatePaperTrailClaims(
+        'An inference [claim:c1].',
+        [{
+          claim_id: 'c1',
+          claim_type: 'medical_knowledge',
+          flag: 'MEDICAL_KNOWLEDGE',
+          evidence: [{ source_record_id: 'rec-1', source_page: 1 }],
+        }],
+        'Finding [page: 1] [record_id: rec-1]',
+      )
+      expect(withNonSourceAnchor.valid).toBe(false)
+      expect(withNonSourceAnchor.errors[0]).toContain('Non-source claim')
+
+      const invalidMetadata = validatePaperTrailClaims(
+        'A supported statement [claim:c1].',
+        [{
+          claim_id: 'c1',
+          claim_type: 'source_record',
+          flag: 'SUPPORTED',
+          evidence: [
+            { source_record_id: 'rec-1', source_page: 1, source_quote: '  ' },
+            { source_record_id: 'rec-1', source_page: 1, source_quote: 'x'.repeat(501) },
+            { source_record_id: 'rec-1', source_page: 1, entry_text: ' ' },
+          ],
+        }],
+        'Finding [page: 1] [record_id: rec-1]',
+      )
+      expect(invalidMetadata.valid).toBe(false)
+      expect(invalidMetadata.errors).toEqual(expect.arrayContaining([
+        expect.stringContaining('empty source quote'),
+        expect.stringContaining('exceeds 500 characters'),
+        expect.stringContaining('empty entry text'),
+      ]))
+    })
+
     test('ClinicalExtractionSchema requires core entity arrays (preventing empty {} structured output) and validates enums', () => {
       const emptyObj = ClinicalExtractionSchema.safeParse({})
       expect(emptyObj.success).toBe(false)

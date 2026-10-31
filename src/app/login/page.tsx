@@ -59,7 +59,7 @@ export default function LoginPage() {
             {[
               {
                 label: 'PaperTrail citations',
-                desc: 'Every clinical assertion links directly to an exact quote and page number in the original PDF.',
+                desc: 'Source-record and page anchors are inspectable when available. They do not establish that a generated claim is correct.',
                 color: 'bg-accent',
               },
               {

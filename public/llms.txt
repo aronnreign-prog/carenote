@@ -1,10 +1,10 @@
 # CareNote: Longitudinal Clinical Memory & Verifiable PaperTrail
 
-> Medical history is not a static text chunk. It is an evolving knowledge graph across time. CareNote turns fragmented clinical encounter PDFs into a persistent bi-temporal patient knowledge graph, producing longitudinal clinical syntheses where assertions can be inspected against source records through The PaperTrail.
+> CareNote is a research-stage prototype testing whether a patient-specific graph helps reviewers reconstruct changing clinical state from fragmented clinical-record PDFs. Its PaperTrail interface makes record and page anchors inspectable when available. CareNote has no external pilot proof or clinical outcome evidence.
 
 ## Core architectural thesis
 
-Standard vector retrieval can lose temporal state across fragmented records. It may retrieve discontinued medications alongside active regimens, repeat copied-forward problem-list labels, and obscure relationships across encounters. CareNote models patient history as an evolving graph with explicit validity boundaries and source anchors.
+The current implementation indexes PDF-derived facts into a patient-specific graph, retrieves dated episodes and temporal relationships, and generates syntheses with claim evidence. It uses encounter dates and graph-service temporal metadata; the application does not maintain explicit `valid_from` and `valid_to` fields for every assertion. A structural check verifies claim markers and that source-backed claims reference record/page anchors present in retrieved context. It does not verify semantic support or clinical correctness.
 
 ## Human-facing discovery pages
 
@@ -13,12 +13,12 @@ Standard vector retrieval can lose temporal state across fragmented records. It 
 
 ## Access and availability
 
-CareNote is currently a curated clinical pilot and design-partner preview. Self-service signup is gated. Collaborators and researchers can review the public research framing and contact route without submitting patient data.
+CareNote is a research-stage prototype seeking qualified collaborators. It has no external pilot proof or clinical outcome evidence. Self-service access is gated. Do not submit patient data through public pages.
 
 ## Key technical and strategic documents
 
 - [Architectural notes](https://carenote.in/architecture.md): Technical explanation of temporal graph memory and PaperTrail.
 - [Collaboration brief](https://carenote.in/collaborate.md): Research-stage collaboration framing and boundaries.
 - [Access and pricing guide](https://carenote.in/pricing.md): Current access model.
-- [Full LLM specification](https://carenote.in/llms-full.txt): Extended machine-readable context.
-- [CareNote homepage](https://carenote.in): Public proof dossier and demo intake.
+- [Full LLM specification](https://carenote.in/llms-full.txt): Extended machine-readable context, including boundaries and the synthetic demonstration description.
+- [CareNote homepage](https://carenote.in): Product overview, fictional hard-coded interface demonstration, and demo intake.
