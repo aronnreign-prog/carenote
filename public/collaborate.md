@@ -1,46 +1,43 @@
-# Build With Us: CareNote Collaboration & Design Partner Program
+# Evaluate CareNote: Research and Technical Collaboration
 
-> Medical history is not a text chunk. It is an evolving graph across time.
+> CareNote is a research-stage prototype testing graph-based longitudinal clinical-record review.
 
-We are actively seeking founding clinicians, patient advocates, and health-tech engineers who want to collaborate on solving the hard problem of longitudinal clinical memory.
+CareNote is seeking clinical-informatics, health-data, and graph-research collaborators who can help test whether its patient-specific graph and PaperTrail workflow are useful. There is no external pilot proof or clinical outcome evidence. Participation is a research or design collaboration, not a request for a testimonial.
 
 ---
 
-## The Vision We Are Pursuing
+## The question we are testing
 
-Standard medical AI tools summarize static PDFs or transcribe single visits. But real clinical medicine happens across multiple providers, hospital admissions, outpatient visits, and prescription adjustments over years.
+Can a patient-specific graph help a knowledgeable reviewer reconstruct changing state, inspect relationships, identify contradictions, and trace claims to source pages across fragmented records?
 
-When medical records are processed as isolated vector chunks, the AI is temporally blind:
-- It repeats copy-forwarded "chart lore" (for example, an unconfirmed diagnosis entered in an urgent care note that was later refuted by a specialist test).
-- It retrieves discontinued medications alongside active regimens.
-- It fails to connect multi-drug prescribing cascades (where Drug A creates a side effect that triggers Drug B, causing complications that trigger Drug C).
+CareNote currently ingests PDF-derived facts into patient-specific graph memory and retrieves graph entities, dated episodes, and temporal relationships for synthesis or query. It uses encounter dates and temporal metadata returned by the graph service. The application does not maintain explicit valid-time and transaction-time fields for every assertion.
 
-CareNote is pioneering bi-temporal clinical memory: modeling patient health as an evolving knowledge graph with explicit validity boundaries and zero-blind-trust PaperTrail citations.
+PaperTrail includes a deterministic structural check. It rejects source-backed output when inline claim markers do not match claim records, source-backed claims lack evidence, or a cited record/page anchor is missing or ambiguous in retrieved context. It does **not** establish that the extracted fact is accurate, that a quotation entails a claim, that a contradiction was correctly interpreted, or that a clinical conclusion is safe.
 
 ---
 
 ## Who We Are Looking to Collaborate With
 
-### 1. Founding Clinicians & Medical Informaticians
+### 1. Clinical informatics and workflow reviewers
 - **Specialties of high relevance:** Geriatrics, Nephrology, Cardiology, Complex Internal Medicine, Rheumatology, and Critical Care Transitions.
 - **Your involvement:** 
-  - Test CareNote's longitudinal clinical synthesis against complex patient trajectories.
-  - Help define clinical safety heuristics: detecting prescribing cascades, unclosed post-discharge holds, and cross-encounter lab contradictions.
-  - Guide our clinical extraction schema and evaluation benchmarks.
+  - Challenge the task definition and what should count as a failure.
+  - Help adjudicate dates, state changes, provenance, conflicts, and uncertainty in a bounded evaluation.
+  - Identify which reviewer workflow, if any, deserves a deeper test.
 
-### 2. Independent Patient Advocates & Geriatric Care Managers
+### 2. Patient advocates and care coordinators
 - **Your perspective:** You are the real-world frontline navigators who assemble fragmented records from multiple health systems into a coherent picture for families and physicians.
 - **Your involvement:**
-  - Pilot CareNote workspaces for your clients' multi-provider records.
-  - Provide direct UX and workflow feedback on the PaperTrail audit inspector and timeline navigation.
-  - Help shape patient-facing and family-facing longitudinal summary formats.
+  - Describe real record-assembly and review problems.
+  - Challenge whether graph outputs expose useful evidence or create false confidence.
+  - Participate in evaluation design, without sharing identifiable patient data.
 
-### 3. AI Engineers & Biomedical Graph Researchers
+### 3. Clinical NLP and graph researchers
 - **Your technical focus:** Context graphs, bi-temporal indexing, knowledge graph retrieval, multimodal document parsing, and verifiable citation mechanisms.
 - **Your involvement:**
-  - Collaborate on graph retrieval algorithms (combining entity nodes, chronological episodes, and temporal edges).
-  - Benchmark extraction precision across multi-column laboratory reports, handwritten medication charts, and dense discharge summaries.
-  - Build open-source clinical benchmarks and interoperability bridges.
+  - Review the graph representation and structural PaperTrail gate.
+  - Propose fair tests for chronology, evidence links, contradictions, and abstention.
+  - Assess whether any public benchmark genuinely fits the implemented PDF-to-graph workflow.
 
 ---
 
@@ -48,6 +45,7 @@ CareNote is pioneering bi-temporal clinical memory: modeling patient health as a
 
 If this problem resonates with you:
 
-1. **Request a Design Partner Workspace:** Submit your details via the demo intake at [carenote.in/#demo](https://carenote.in/#demo) and mention your background.
-2. **Direct Collaborative Discussion:** Reach out directly through our workspace channels or email us at `collaborate@carenote.in` (or via the founder channels).
-3. **Inspect the Architecture:** Read our complete technical foundation at [carenote.in/architecture.md](https://carenote.in/architecture.md) and [carenote.in/llms-full.txt](https://carenote.in/llms-full.txt).
+1. **Start with a bounded review:** Email `collaborate@carenote.in` with the workflow or methods question you understand and whether you prefer asynchronous review or a conversation.
+2. **Data boundary:** Do not send identifiable patient data through public pages or email. Any evaluation data requires appropriate governance, permissions, and explicit scope.
+3. **Credit and publication:** Participation is private by default. Public attribution, quotes, institutional affiliation, or publication require separate written permission.
+4. **Inspect the implementation:** Read [the architecture notes](https://carenote.in/architecture.md) and [the full technical specification](https://carenote.in/llms-full.txt), including the current limitations.

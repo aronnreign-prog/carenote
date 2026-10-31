@@ -26,14 +26,14 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://carenote.in"),
   title: "CareNote: Temporal Graph Memory & Verifiable PaperTrail",
   description:
-    "Medical history is an evolving graph over time, not disconnected text chunks. CareNote stores clinical facts in persistent bi-temporal memory with an instant PaperTrail linking every claim to its source record page.",
+    "CareNote is a research-stage prototype testing whether a patient-specific graph helps reviewers reconstruct changing clinical state across fragmented records. Source record and page anchors are inspectable when available.",
   alternates: {
     canonical: "https://carenote.in",
   },
   openGraph: {
     title: "CareNote: Temporal Graph Memory & Verifiable PaperTrail",
     description:
-      "Transforming fragmented clinical encounter PDFs into an evolving bi-temporal patient knowledge graph with 100% source-verified PaperTrail citations.",
+      "A research-stage prototype for longitudinal clinical-record review, with a patient-specific graph and an inspectable source-page workflow.",
     url: "https://carenote.in",
     siteName: "CareNote",
     locale: "en_US",
@@ -51,7 +51,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "CareNote: Temporal Graph Memory & Verifiable PaperTrail",
     description:
-      "Medical history is an evolving graph over time, not disconnected text chunks. CareNote synthesizes patient records with verified PaperTrail citations.",
+      "CareNote is exploring whether a patient-specific graph helps reviewers reconstruct changing clinical state from fragmented records.",
     images: ["/logo.png"],
   },
   robots: {
@@ -81,7 +81,7 @@ const jsonLd = {
       applicationCategory: "HealthApplication",
       operatingSystem: "Web",
       description:
-        "Longitudinal clinical memory and synthesis engine that models patient medical records as an evolving bi-temporal knowledge graph with verified PaperTrail citations.",
+        "Research-stage prototype that indexes clinical-record PDFs into patient-specific graph memory and generates longitudinal syntheses with inspectable source anchors when available.",
     },
     {
       "@type": "Organization",
@@ -96,7 +96,7 @@ const jsonLd = {
       url: "https://carenote.in",
       name: "CareNote: Longitudinal Clinical Memory & Verifiable PaperTrail",
       description:
-        "CareNote turns fragmented clinical encounter PDFs into an evolving bi-temporal patient knowledge graph with direct PaperTrail citations linking claims to source PDF pages.",
+        "CareNote is a research-stage prototype exploring patient-specific graph memory for longitudinal clinical-record review. Source record and page anchors are inspectable when available; clinical performance has not been validated.",
       audience: {
         "@type": "MedicalAudience",
         audienceType: "Clinicians, Care Coordinators, and Patients",
@@ -111,31 +111,31 @@ const jsonLd = {
           name: "What is CareNote and how does it synthesize clinical records?",
           acceptedAnswer: {
             "@type": "Answer",
-            text: "CareNote is a longitudinal clinical memory engine that transforms fragmented medical encounter PDFs into a persistent bi-temporal knowledge graph. It extracts structured medications, lab panels, and conditions with encounter dates and physical page numbers, producing clinical syntheses where every assertion is backed by verifiable source proof.",
+            text: "CareNote is a research-stage prototype that indexes uploaded clinical-record PDFs into patient-specific graph memory and generates longitudinal syntheses with structured claim evidence. It is exploring whether this helps reviewers reconstruct changing clinical state and inspect evidence across time. It has no external pilot proof or clinical outcome evidence.",
           },
         },
         {
           "@type": "Question",
-          name: "Why do standard vector RAG tools fail on longitudinal medical records?",
+          name: "What is CareNote testing?",
           acceptedAnswer: {
             "@type": "Answer",
-            text: "Standard vector RAG chops PDFs into isolated paragraphs, causing temporal blindness. It retrieves superseded medications alongside active ones, repeats copy-forwarded problem list labels without checking confirmatory diagnostic tests, and cannot trace multi-encounter prescribing cascades across different healthcare providers.",
+            text: "CareNote is testing whether a patient-specific graph helps a knowledgeable reviewer reconstruct changing clinical state and inspect relationships across fragmented records. Comparative performance against ordinary search or other systems has not been established.",
           },
         },
         {
           "@type": "Question",
-          name: "What is The PaperTrail verification in CareNote?",
+          name: "What does the PaperTrail structural check do?",
           acceptedAnswer: {
             "@type": "Answer",
-            text: "The PaperTrail is CareNote's zero-blind-trust verification mechanism. Every clinical assertion in a synthesis carries an interactive claim marker classified as SUPPORTED, CONFLICTING, notable absence, or MEDICAL KNOWLEDGE. Clicking a citation streams the authentic source PDF directly to the cited page with verbatim excerpts.",
+            text: "The PaperTrail structural check verifies that claim markers match claim records and that source-backed claims reference record/page anchors present in retrieved context. It does not verify that the model interpreted a source correctly, that a quotation entails a claim, or that a result is clinically accurate.",
           },
         },
         {
           "@type": "Question",
-          name: "How does CareNote identify prescribing cascades and chart lore?",
+          name: "What are the limitations of CareNote?",
           acceptedAnswer: {
             "@type": "Answer",
-            text: "By modeling encounters across time in a bi-temporal graph, CareNote links drug initiations to subsequent symptoms and follow-on prescriptions. It compares unverified problem list labels against primary diagnostic tests to refute inaccurate chart lore and flags unclosed therapeutic holds when recovery criteria are satisfied.",
+            text: "CareNote retrieves graph entities, dated record episodes, and temporal relationships for a reviewer to inspect. The product has not been independently evaluated for detecting prescribing cascades, contradictions, or unresolved follow-up.",
           },
         },
         {

@@ -12,6 +12,7 @@ import { z } from 'zod'
 import { revalidatePath } from 'next/cache'
 import { getWorkspace } from '@/lib/auth-session'
 import { isValidUUID } from '@/lib/validators'
+import { validatePaperTrailClaims } from '@/lib/ai/validate-papertrail'
 
 function isValidVercelBlobUrl(url: string): boolean {
   try {
@@ -267,6 +268,22 @@ PaperTrail Citation Requirement:
       abortSignal: AbortSignal.timeout(120000),
     })
 
+    const paperTrailCheck = validatePaperTrailClaims(object.synthesis_text, object.claims, context)
+    if (!paperTrailCheck.valid) {
+      const errorMessage = `PaperTrail integrity check failed: ${paperTrailCheck.errors.join(' ')}`
+      await db.update(clinicalSyntheses).set({
+        status: 'failed',
+        error_message: errorMessage,
+      }).where(
+        and(
+          eq(clinicalSyntheses.id, synthesisId),
+          eq(clinicalSyntheses.patient_id, patientId),
+          eq(clinicalSyntheses.workspace_id, workspace.id)
+        )
+      )
+      return { error: errorMessage }
+    }
+
     const cleanedSynthesisText = object.synthesis_text.replace(/^[0-9]+\s+/, '').trim()
 
     await db.update(clinicalSyntheses).set({
@@ -397,6 +414,13 @@ Guidelines:
       schema: ClinicalQueryOutputSchema,
       abortSignal: AbortSignal.timeout(45000),
     })
+
+    const paperTrailCheck = validatePaperTrailClaims(object.answer, object.claims, context)
+    if (!paperTrailCheck.valid) {
+      return {
+        error: `PaperTrail integrity check failed: ${paperTrailCheck.errors.join(' ')}`,
+      }
+    }
 
     return {
       answer: object.answer,

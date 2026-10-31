@@ -7,7 +7,7 @@ import { Logo } from '@/components/ui/Logo'
 export const metadata: Metadata = {
   title: 'CareNote: Longitudinal Clinical Memory & Verifiable PaperTrail Synthesis',
   description:
-    'Clinical encounter records form an evolving longitudinal graph across time, not disconnected text chunks. CareNote reconciles patient records into a persistent temporal knowledge graph with a clickable PaperTrail linking every claim to its source PDF page.',
+    'CareNote is a research-stage prototype testing whether patient-specific graph memory helps reviewers reconstruct changing clinical state across fragmented records. It has no external pilot proof or clinical outcome evidence.',
 }
 
 export default function LandingPage() {
@@ -49,7 +49,7 @@ export default function LandingPage() {
             </h1>
 
             <p className="text-[17px] sm:text-[19px] text-white/65 leading-relaxed max-w-2xl mb-8">
-              Standard AI tools chop PDFs into isolated paragraphs and lose chronological state across encounters. CareNote connects every lab panel, prescription, discharge summary, and specialist consult into a persistent patient graph with a clickable PaperTrail linking every claim to its source page.
+              CareNote is a research-stage prototype testing whether a patient-specific graph helps reviewers reconstruct changing clinical state across fragmented records. Source record and page anchors are inspectable when available, but the system has not been clinically validated.
             </p>
 
             <div className="flex items-center gap-3">
@@ -62,27 +62,27 @@ export default function LandingPage() {
                 href="#proof"
                 className="text-[13px] text-white/70 border border-white/[0.12] bg-white/[0.02] px-5 py-2.5 rounded hover:text-white hover:border-white/30 transition-colors focus-visible:ring-2 focus-visible:ring-white/40 outline-none"
               >
-                Explore Live Proof ↓
+                Inspect Synthetic Demo ↓
               </a>
             </div>
           </div>
 
-          {/* ━━━ Product Proof: Grounded Longitudinal Clinical Synthesis + PaperTrail Inspector ━━━ */}
+          {/* ━━━ Fictional Interface Demonstration ━━━ */}
           <div id="proof" className="scroll-mt-20">
             <HeroClinicalProof />
           </div>
         </div>
       </section>
 
-      {/* ━━━ Bet 1: Graph Memory vs. Vector Chunks ━━━ */}
+      {/* ━━━ Research Question: Graph Memory and Document Search ━━━ */}
       <section className="py-20 border-t border-white/[0.08]">
         <div className="mx-auto max-w-5xl px-6">
           <div className="max-w-2xl mb-12">
             <h2 className="text-[26px] sm:text-[34px] font-semibold tracking-[-0.025em] text-white mb-3 text-balance">
-              Vector databases are temporally blind.
+              Does graph memory help preserve context across encounters?
             </h2>
             <p className="text-[15px] sm:text-[16px] text-white/65 leading-[1.65] max-w-[65ch]">
-              Standard AI tools slice clinical PDFs into isolated text chunks and retrieve by semantic similarity in an eternal present. Because vector search lacks a model of chronological validity intervals, it retrieves superseded regimens alongside active orders, confuses historical chart lore with current diagnoses, and cannot trace multi-encounter prescribing cascades.
+              CareNote is exploring whether a patient-specific graph helps reviewers inspect dated records, changing states, and relationships across encounters. We have not yet measured whether it improves on ordinary document search or other clinical AI systems.
             </p>
           </div>
 
@@ -91,21 +91,22 @@ export default function LandingPage() {
             <div className="border border-white/[0.08] rounded-xl bg-white/[0.01] p-6 sm:p-8 flex flex-col justify-between">
               <div>
                 <h3 className="text-[15px] font-semibold text-white/90 mb-2">
-                  How Standard AI Tools Store Clinical Records (Vector Chunks)
+                  What a document-search approach may leave to the reviewer
                 </h3>
                 <p className="text-[13px] text-white/60 leading-[1.6] mb-6">
-                  Encounter records are broken into stateless fragments and indexed by keyword similarity. Retrieval repeats copy-pasted problem list labels (&ldquo;chart lore&rdquo;) and treats iatrogenic prescribing cascades as independent chronic conditions.
+                  Search results may require reviewers to reconcile dates, status changes, contradictions, and source material across records. The extent of this challenge depends on the system and workflow.
                 </p>
 
-                <div className="p-3.5 rounded-lg bg-red-500/[0.03] border border-red-500/20 space-y-2 text-[12px] font-mono text-white/60 tabular-nums">
-                  <p className="text-red-300">&times; Chunk 19 (Urgent Care): &quot;Pedal edema: suspect HFpEF; start Furosemide 40mg&quot;</p>
-                  <p className="text-red-300">&times; Chunk 44 (Discharge): &quot;PMH: HFpEF. K+ 3.1; start KCl 20mEq. Hold Empagliflozin&quot;</p>
-                  <p className="text-red-300">&times; Chunk 61 (Echo PDF): &quot;LVEF 62%, NT-proBNP 58 pg/mL: no heart failure&quot;</p>
+                <div className="p-3.5 rounded-lg bg-white/[0.03] border border-white/10 space-y-2 text-[12px] text-white/60">
+                  <p className="text-white/80">&quot;Pedal edema: suspect HFpEF; start Furosemide 40mg&quot;</p>
+                  <p className="text-white/80">&quot;PMH: HFpEF. K+ 3.1; start KCl 20mEq. Hold Empagliflozin&quot;</p>
+                  <p className="text-white/80">&quot;LVEF 62%, NT-proBNP 58 pg/mL: no heart failure&quot;</p>
                 </div>
+                <p className="mt-2 text-[11px] text-amber-200/80">Illustrative excerpts from a fictional scenario, not retrieved product output.</p>
               </div>
 
               <div className="mt-8 pt-4 border-t border-white/[0.06] text-[12px] text-red-300/90 leading-relaxed">
-                Result: Affirms copy-forwarded &ldquo;HFpEF&rdquo; chart lore, misses that Furosemide and KCl were triggered by Amlodipine edema, and drops the conditional Empagliflozin hold.
+                Illustrative document-search scenario, not a measured result from another product.
               </div>
             </div>
 
@@ -113,21 +114,21 @@ export default function LandingPage() {
             <div className="border border-emerald-500/30 rounded-xl bg-emerald-500/[0.02] p-6 sm:p-8 flex flex-col justify-between">
               <div>
                 <h3 className="text-[15px] font-semibold text-white mb-2">
-                  How CareNote Indexes Clinical Records (Bi-Temporal Knowledge Graph)
+                  What CareNote currently implements
                 </h3>
                 <p className="text-[13px] text-white/70 leading-[1.6] mb-6">
-                  Aligns causal and epistemic edges across encounters and specialties. Links drug initiations to downstream symptoms, verifies copied diagnoses against primary diagnostic reports, and tracks conditional holds until closure.
+                  Indexes PDF-derived facts into patient-specific graph memory and retrieves entities, dated episodes, and temporal relationships. Whether this reliably reconstructs state or adds value remains to be evaluated.
                 </p>
 
-                <div className="p-3.5 rounded-lg bg-emerald-500/[0.03] border border-emerald-500/20 space-y-2 text-[12px] font-mono tabular-nums">
-                  <p className="text-white/80">Amlodipine 10mg → Edema → Furosemide → KCl → <span className="text-amber-300 font-medium">[PRESCRIBING CASCADE]</span></p>
-                  <p className="text-white/80">&quot;HFpEF&quot; Label vs. Normal Echo/BNP (#p.2) → <span className="text-amber-300 font-medium">[⚡ CHART LORE REFUTED]</span></p>
-                  <p className="text-white font-medium">Empagliflozin 10mg (Cr 1.12 &lt; 1.2 threshold met) → <span className="text-purple-300 font-medium">[∅ UNCLOSED HOLD]</span></p>
+                <div className="p-3.5 rounded-lg bg-emerald-500/[0.03] border border-emerald-500/20 space-y-2 text-[12px] text-white/80">
+                  <p className="text-white/80">Authored relationship: Amlodipine → edema → Furosemide → KCl</p>
+                  <p className="text-white/80">Authored conflict: &quot;HFpEF&quot; label vs. normal echo/BNP (#p.2)</p>
+                  <p className="text-white font-medium">Authored unresolved state: Empagliflozin hold after Cr recovery</p>
                 </div>
               </div>
 
               <div className="mt-8 pt-4 border-t border-emerald-500/20 text-[12px] text-emerald-300/90 leading-relaxed">
-                Result: Exposes the 3-drug iatrogenic cascade, refutes unverified chart lore via page-level Echo provenance, and surfaces the unclosed post-discharge hold.
+                Authored demonstration only. It does not show that CareNote detected these relationships in real records or that its interpretation is clinically accurate.
               </div>
             </div>
           </div>
@@ -139,10 +140,10 @@ export default function LandingPage() {
         <div className="mx-auto max-w-5xl px-6">
           <div className="max-w-2xl mb-12">
             <h2 className="text-[26px] sm:text-[34px] font-semibold tracking-[-0.025em] text-white mb-3 text-balance">
-              Never trust an AI synthesis without a page number.
+              Source anchors make claims easier to inspect, not automatically true.
             </h2>
             <p className="text-[15px] sm:text-[16px] text-white/65 leading-[1.65] max-w-[65ch]">
-              In medicine, a hallucinated dosage or misattributed date carries real danger. CareNote refuses black-box generation. Every asserted fact carries a direct audit anchor.
+              Source and page anchors can help a reviewer inspect a generated statement. They do not prove that the source was interpreted correctly, that a quotation entails a claim, or that important records were not missed.
             </p>
           </div>
 
@@ -151,21 +152,21 @@ export default function LandingPage() {
               <div className="space-y-2">
                 <div className="text-[14px] font-semibold text-white">1. Fact Extraction</div>
                 <p className="text-[13px] text-white/60 leading-[1.6]">
-                  Multimodal AI reads the PDF visually, extracting values, units, reference intervals, and physical page numbers directly from the clinical record.
+                  The current pipeline sends PDFs to a multimodal model and requests structured facts, including values, units, reference intervals, and page numbers when available.
                 </p>
               </div>
 
               <div className="space-y-2">
                 <div className="text-[14px] font-semibold text-white">2. Graph Synthesis</div>
                 <p className="text-[13px] text-white/60 leading-[1.6]">
-                  Facts accumulate into the patient graph, connecting changes across visits and detecting discrepancies between different specialists.
+                  Extracted facts are serialized into graph episodes and combined with graph search results for synthesis. Accuracy and reviewer value remain to be evaluated.
                 </p>
               </div>
 
               <div className="space-y-2">
                 <div className="text-[14px] font-semibold text-white">3. Direct Audit Trail</div>
                 <p className="text-[13px] text-white/60 leading-[1.6]">
-                  Every claim in the clinical synthesis links directly to its source PDF. Click the citation to inspect the original doctor&apos;s note and page.
+                  PaperTrail renders source record and page anchors when supplied. A structural check tests claim-marker and anchor alignment, not semantic support or clinical correctness.
                 </p>
               </div>
             </div>
@@ -182,7 +183,7 @@ export default function LandingPage() {
                 Query longitudinal clinical memory in plain language.
               </h2>
               <p className="text-[15px] sm:text-[16px] text-white/65 leading-[1.65] mb-6 max-w-[50ch]">
-                Ask questions across accumulated clinical encounter records. Receive grounded answers with direct PaperTrail citations back to the exact source PDF page.
+                CareNote queries accumulated clinical-record graph memory and renders source anchors when available. A structural check verifies marker and record/page alignment, but not whether a claim is clinically correct or semantically supported.
               </p>
 
               <div className="space-y-2.5 text-[13px] text-white/80">
@@ -200,8 +201,8 @@ export default function LandingPage() {
 
             <div className="lg:col-span-7 border border-white/[0.08] rounded-xl bg-[#0F141C] p-6">
               <div className="pb-3 border-b border-white/[0.08] mb-4 text-[11px] text-white/50 font-semibold flex items-center justify-between">
-                <span>Clinical Query Output · Patient R.K.</span>
-                <span className="text-emerald-400">Source-Grounded</span>
+                <span>Illustrative Query Output · Patient R.K.</span>
+                <span className="text-emerald-400">Synthetic demonstration</span>
               </div>
 
               <div className="space-y-3 text-[12px]">
@@ -210,7 +211,7 @@ export default function LandingPage() {
                 </div>
                 <div className="p-4 rounded bg-black/20 border border-white/[0.06] space-y-2.5 leading-relaxed">
                   <p className="text-white font-medium">
-                    No. Echocardiography ruled out heart failure; Furosemide was initiated in a prescribing cascade:
+                    Synthetic example only: this authored scenario illustrates how a reviewer might inspect an alleged medication sequence:
                   </p>
                   <ul className="space-y-2 list-disc pl-4 text-white/80">
                     <li>
@@ -259,7 +260,7 @@ export default function LandingPage() {
           </h2>
 
           <p className="text-[15px] sm:text-[16px] text-white/60 max-w-md mx-auto mb-8">
-            Experience how persistent bi-temporal graph memory and clickable PaperTrail citations synthesize fragmented clinical encounter records.
+            CareNote is a research-stage prototype. The homepage scenario is fictional and hard-coded, not a live product result. Qualified collaborators can help test whether graph-assisted review adds value.
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">

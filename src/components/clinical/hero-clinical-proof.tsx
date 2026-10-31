@@ -153,7 +153,11 @@ export function HeroClinicalProof() {
   }
 
   return (
-    <div className="border border-[#1F2937] rounded-xl bg-[#0D1117] shadow-2xl overflow-hidden text-left">
+    <div className="text-left">
+      <p className="mb-3 rounded-lg border border-amber-400/25 bg-amber-400/[0.06] px-4 py-3 text-xs leading-5 text-amber-100/80">
+        Fictional, hard-coded demonstration scenario. Not a real patient, a live CareNote synthesis, or evidence of clinical performance. The displayed record labels and page references are illustrative placeholders.
+      </p>
+      <div className="border border-[#1F2937] rounded-xl bg-[#0D1117] shadow-2xl overflow-hidden">
       {/* Dossier Bar */}
       <div className="border-b border-[#1F2937] bg-[#0A0E14] px-4 py-3 flex items-center justify-between text-[11px] text-slate-400 flex-wrap gap-2">
         <div className="flex items-center gap-2.5">
@@ -176,7 +180,7 @@ export function HeroClinicalProof() {
             1 not documented
           </span>
           <span className="font-mono text-[10px] text-white/70 bg-white/[0.06] px-2.5 py-0.5 rounded border border-white/10 tracking-wider">
-            INTERACTIVE CLINICAL PROOF
+            SYNTHETIC DEMONSTRATION
           </span>
         </div>
       </div>
@@ -504,7 +508,7 @@ export function HeroClinicalProof() {
                   <span className="text-slate-400">Verification Status:</span>
                   <span className="text-emerald-400 flex items-center gap-1 font-medium">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                    SUPPORTED
+                    Demonstration label
                   </span>
                 </div>
               </div>
@@ -512,9 +516,10 @@ export function HeroClinicalProof() {
           </div>
 
           <div className="p-3.5 rounded-lg border border-[#1F2937] bg-[#0D1117] text-[11px] text-slate-400 leading-relaxed">
-            <span className="font-semibold text-white">Why 1D trend trackers miss this:</span> A flowsheet only shows creatinine rising and falling. CareNote&apos;s bi-temporal graph links the <span className="text-slate-200">Amlodipine → Furosemide → KCl prescribing cascade</span>, refutes copy-pasted <span className="text-slate-200">&ldquo;HFpEF&rdquo; chart lore</span> against the normal Echo PDF (#p.2), and flags the <span className="text-slate-200">unclosed Empagliflozin hold</span> once Cr recovered &lt;1.2 mg/dL.
+            This fictional demonstration illustrates a proposed review pattern. It does not show a live CareNote result, prove a causal relationship, or establish that the system reliably detects contradictions or unresolved holds.
           </div>
         </div>
+      </div>
       </div>
     </div>
   )

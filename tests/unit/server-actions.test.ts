@@ -340,11 +340,19 @@ describe('Server Actions (Demo Intake, Dashboard, Clinical Pipeline, Admin)', ()
       queueUpdate() // status: processing
       const completeUpdate = queueUpdate() // status: complete
 
-      actionMocks.queryPatientMemory.mockResolvedValueOnce('<FACTS>\n- Warfarin 5mg [ACTIVE]\n</FACTS>')
+      actionMocks.queryPatientMemory.mockResolvedValueOnce(
+        '<CHRONOLOGICAL_EVIDENCE>\nCLINICAL ENCOUNTER RECORD: warfarin.pdf (record_id: rec-1)\n- Warfarin 5mg [page: 1] [record_id: rec-1]\n</CHRONOLOGICAL_EVIDENCE>'
+      )
       actionMocks.generateObject.mockResolvedValueOnce({
         object: {
           synthesis_text: '1 Patient maintained on Warfarin 5mg [claim:c1].',
-          claims: [{ claim_id: 'c1', claim_text: 'Warfarin 5mg daily', claim_type: 'source_record', flag: 'SUPPORTED' }],
+          claims: [{
+            claim_id: 'c1',
+            claim_text: 'Warfarin 5mg daily',
+            claim_type: 'source_record',
+            flag: 'SUPPORTED',
+            evidence: [{ source_record_id: 'rec-1', source_page: 1 }],
+          }],
           flagged_concerns: [],
         },
       })
@@ -376,7 +384,7 @@ describe('Server Actions (Demo Intake, Dashboard, Clinical Pipeline, Admin)', ()
       // 1st queryPatientMemory returns empty -> triggers self-heal rebuild from extracted clinicalRecords
       actionMocks.queryPatientMemory
         .mockResolvedValueOnce('')
-        .mockResolvedValueOnce('<FACTS>\n- Rebuilt fact from PDF [record_id: rec-1] [page: 2]\n</FACTS>')
+        .mockResolvedValueOnce(`<CHRONOLOGICAL_EVIDENCE>\nCLINICAL ENCOUNTER RECORD: rebuilt.pdf (record_id: ${recordId})\n- Rebuilt fact from PDF [page: 2] [record_id: ${recordId}]\n</CHRONOLOGICAL_EVIDENCE>`)
 
       queueSelect([
         {
@@ -408,6 +416,7 @@ describe('Server Actions (Demo Intake, Dashboard, Clinical Pipeline, Admin)', ()
             {
               claim_id: 'c1',
               claim_text: 'Lisinopril stopped',
+              claim_type: 'source_record',
               flag: 'SUPPORTED',
               evidence: [{ source_record_id: recordId, source_page: 2 }],
             },
